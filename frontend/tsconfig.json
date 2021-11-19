@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "lib": ["es2021", "dom"],
+    "module": "es2020",
+    "target": "es2021",
+    "strict": true,
+    "esModuleInterop": true,
+    // "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "exactOptionalPropertyTypes": true,
+    "outDir": "dist/js",
+    "sourceMap": true
+    // "preserveWatchOutput": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

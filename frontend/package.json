@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "live-server": "^1.2.1",
+    "typescript": "^4.5.2"
+  },
+  "scripts": {
+    "dev": "npm run clean ; npm run tsc_watch & npm run server_watch",
+    "clean": "rm -fdr dist/js",
+    "tsc_watch": "npx tsc --watch",
+    "server_watch": "npx live-server --no-css-inject --verbose --watch=dist --mount=/:dist"
+  }
+}
