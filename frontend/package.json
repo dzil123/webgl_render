@@ -1,12 +1,13 @@
 {
   "dependencies": {
-    "live-server": "^1.2.1",
+    "five-server": "^0.0.30",
     "typescript": "^4.5.2"
   },
   "scripts": {
-    "dev": "npm run clean ; npm run tsc_watch & npm run server_watch",
+    "dev": "npm run ensure_install && (npm run clean ; npm run tsc_watch & npm run server_watch)",
+    "ensure_install": "[ -d node_modules ] || (echo 'run npm install' ; exit 1)",
     "clean": "rm -fdr dist/js",
     "tsc_watch": "npx tsc --watch",
-    "server_watch": "npx live-server --no-css-inject --verbose --watch=dist --mount=/:dist"
+    "server_watch": "npx five-server"
   }
 }

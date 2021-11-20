@@ -1,5 +1,10 @@
 {
   "editor.formatOnSave": true,
+  "files.insertFinalNewline": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "html.format.enable": false
+  "html.format.enable": false,
+  "fiveServer.navigate": false,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.format.enable": false
+  // "typescript.tsserver.log": "normal"
 }
