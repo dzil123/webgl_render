@@ -1,14 +1,14 @@
 {
-  "dependencies": {
-    "five-server": "^0.0.30",
-    "webgl-strict-types": "^1.0.5",
-    "typescript": "^4.5.2"
-  },
   "scripts": {
+    "clean": "rm -fdr dist/js",
     "dev": "npm run ensure_install && (npm run clean ; npm run tsc_watch & npm run server_watch)",
     "ensure_install": "[ -d node_modules ] || (echo 'run npm install' ; exit 1)",
-    "clean": "rm -fdr dist/js",
-    "tsc_watch": "npx tsc --watch",
-    "server_watch": "npx five-server"
+    "server_watch": "npx five-server",
+    "tsc_watch": "npx tsc --watch"
+  },
+  "dependencies": {
+    "five-server": "^0.0.30",
+    "typescript": "^4.5.2",
+    "webgl-strict-types": "^1.0.5"
   }
 }
