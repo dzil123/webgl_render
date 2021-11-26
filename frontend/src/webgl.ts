@@ -1,6 +1,10 @@
 /// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
 
-import "https://greggman.github.io/webgl-lint/webgl-lint.js";
+import "../third-party/webgl-lint.js";
+import { mat4 } from "../third-party/gl-matrix/index.js";
+
+import * as util from "./util.js";
+
 type GL2Context = WebGL2RenderingContextStrict;
 import GL = WebGLRenderingContextStrict;
 import GL2 = WebGL2RenderingContextStrict;
@@ -12,9 +16,7 @@ export function loadGL(): GL2 {
   }
 
   let gl = canvas.getContext("webgl2") as any as GL2Context;
-  if (gl === null) {
-    throw new Error("Failed to get webgl2 context");
-  }
+  gl = util.nonnull(gl);
 
   return gl;
 }
@@ -49,9 +51,7 @@ export async function loadShader(
   let source = await downloadShader(name);
 
   let shader = gl.createShader(typeOfShader(gl, name));
-  if (shader === null) {
-    throw new Error("gl.createShader() failed");
-  }
+  shader = util.nonnull(shader);
 
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
