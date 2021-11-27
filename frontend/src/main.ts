@@ -1,5 +1,8 @@
+import { mat4 } from "../third-party/gl-matrix/index.js";
+
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
+// import "./demo.js";
 
 let gl = webgl.loadGL();
 
@@ -10,6 +13,8 @@ let program = util.nonnull(gl.createProgram());
 gl.attachShader(program, vert);
 gl.attachShader(program, frag);
 gl.linkProgram(program);
+
+let aspect = gl.canvas.width / gl.canvas.height;
 
 gl.clearColor(1.0, 1.0, 1.0, 1.0);
 gl.useProgram(program);
