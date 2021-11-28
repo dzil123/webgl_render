@@ -21,11 +21,24 @@ gl.useProgram(program);
 
 // framebuffer vs renderbuffer
 
+let uploadCameraMatrix = webgl.texture(gl, program, "cameraMatrix", 4);
+let uploadSceneSpheres = webgl.texture(gl, program, "sceneSpheres", 1);
+let uploadGlobals = webgl.texture(gl, program, "globals", 1);
+
+uploadCameraMatrix(
+  new Float32Array([
+    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, 0, 1, 5, 1,
+  ])
+);
+
+uploadSceneSpheres(
+  new Float32Array([0, 0, -1, 2.7, 3, 1, 0, 1.2, -2, -1, 1, 1])
+);
+
 while (true) {
-  let x = await util.frame();
-  //   if (Math.random() < 0.01) {
-  //     console.log(x);
-  //   }
+  let sec = (await util.frame()) / 1000;
+
+  uploadGlobals(new Float32Array([sec, 0, 0, 0]));
 
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);

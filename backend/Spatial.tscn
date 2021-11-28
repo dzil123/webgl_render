@@ -21,23 +21,24 @@ size = Vector2( 1000, 1000 )
 script = ExtResource( 1 )
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( 1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 1, 5 )
+transform = Transform( 1, 0, 0, 0, 0.976296, 0.21644, 0, -0.21644, 0.976296, 0, 1, 5 )
 
 [node name="Sphere0" type="MeshInstance" parent="."]
+transform = Transform( 2.7, 0, 0, 0, 2.7, 0, 0, 0, 2.7, 0, 0, -1 )
 mesh = SubResource( 2 )
 material/0 = null
 
 [node name="Sphere1" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 0, -3 )
+transform = Transform( 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3, 1, 0 )
 mesh = SubResource( 2 )
 material/0 = null
 
 [node name="Sphere2" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -3, -2, 1 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -1, 1 )
 mesh = SubResource( 2 )
 material/0 = null
 
 [node name="Plane" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, -0.00375557, -1.98566, -0.00687456 )
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, -0.73333, -1.96329, 0.56158 )
 mesh = SubResource( 4 )
 material/0 = null

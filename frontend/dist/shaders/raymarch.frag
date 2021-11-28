@@ -9,12 +9,30 @@ out vec4 outColor;
 const float INFINITY = uintBitsToFloat(0x7F800000u);
 const float NEGATIVE_INFINITY = uintBitsToFloat(0xFF800000u);
 
+uniform sampler2D cameraMatrix;
+uniform sampler2D sceneSpheres;
+uniform sampler2D globals;
+
+// https://iquilezles.org/www/articles/smin/smin.htm
+float sminCubic(float a, float b, float k) {
+    float h = max(k - abs(a - b), 0.0) / k;
+    return min(a, b) - h * h * h * k * (1.0 / 6.0);
+}
+
 float scene(vec3 pos) {
     float dist = INFINITY;
 
-    dist = min(dist, distance(pos, vec3(0, 0, 0)) - 1.0);
-    dist = min(dist, distance(pos, vec3(8, 0, -3)) - 1.0);
-    dist = min(dist, distance(pos, vec3(-3, -2, 1)) - 1.0);
+    float time = texelFetch(globals, ivec2(0, 0), 0).x;
+    float k = 0.1 + 1.5 * abs(sin(time));
+
+    int numSpheres = textureSize(sceneSpheres, 0).y;
+    for (int i = 0; i < numSpheres; i++) {
+        vec4 data = texelFetch(sceneSpheres, ivec2(0, i), 0);
+        vec3 center = data.xyz;
+        float radius = data.w;
+
+        dist = sminCubic(dist, distance(pos, center) - radius, k);
+    }
 
     return dist;
 }
@@ -68,10 +86,10 @@ vec3 ray_dir(vec2 plane, vec2 uv) {
 
 mat4 camera_transform() {
     mat4 m;
-    m[0] = vec4(1, 0, 0, 0);
-    m[1] = vec4(0, 0.94, -0.342, 0);
-    m[2] = vec4(0, 0.342, 0.94, 0);
-    m[3] = vec4(0, 1, 5, 1);
+    m[0] = texelFetch(cameraMatrix, ivec2(0, 0), 0);
+    m[1] = texelFetch(cameraMatrix, ivec2(1, 0), 0);
+    m[2] = texelFetch(cameraMatrix, ivec2(2, 0), 0);
+    m[3] = texelFetch(cameraMatrix, ivec2(3, 0), 0);
     return m;
 }
 
