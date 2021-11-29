@@ -22,7 +22,7 @@ export function loadGL(): GL2 {
 }
 
 async function downloadShader(name: string): Promise<string> {
-  let url = `/shaders/${name}`;
+  let url = `shaders/${name}`;
   let response = await fetch(url);
   if (!response.ok) {
     throw new Error(
