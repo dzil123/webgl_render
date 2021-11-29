@@ -11,7 +11,7 @@ export function loadGL() {
     return gl;
 }
 async function downloadShader(name) {
-    let url = `/shaders/${name}`;
+    let url = `shaders/${name}`;
     let response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to download shader ${name}: ${response.status} ${response.statusText}`);
