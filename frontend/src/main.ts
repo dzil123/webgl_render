@@ -2,8 +2,15 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
+import * as websocket from "./websocket.js";
 // import "./demo.js";
 
+function message_handler(data: Object) {
+  console.log("FFFFF", data);
+  uploadCameraMatrix(new Float32Array(data["mat4"]));
+}
+
+let ws_promise = websocket.createWS(message_handler);
 let gl = webgl.loadGL();
 
 let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
