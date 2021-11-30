@@ -47,6 +47,8 @@ function textureIndex(i) {
     return GL_TEXTURE0 + i;
 }
 const globalTextures = util.new_globals();
+// creates a f32 vec4 datatexture and returns a function to upload data to it
+// this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
 export function texture(gl, program, name, width) {
     // keep a counter for each program to assign a unique monotonic id for each texture
     let global_storage = globalTextures(program);

@@ -3,10 +3,8 @@ import * as webgl from "./webgl.js";
 import * as websocket from "./websocket.js";
 // import "./demo.js";
 function message_handler(data) {
-    console.log("FFFFF", data);
     uploadCameraMatrix(new Float32Array(data["mat4"]));
 }
-let ws_promise = websocket.createWS(message_handler);
 let gl = webgl.loadGL();
 let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
 let frag = await webgl.loadShader(gl, "raymarch.frag");
@@ -25,6 +23,7 @@ uploadCameraMatrix(new Float32Array([
     1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, 0, 1, 5, 1,
 ]));
 uploadSceneSpheres(new Float32Array([0, 0, -1, 2.7, 3, 1, 0, 1.2, -2, -1, 1, 1]));
+let ws_promise = websocket.createWS(message_handler);
 while (true) {
     let sec = (await util.frame()) / 1000;
     uploadGlobals(new Float32Array([sec, 0, 0, 0]));
