@@ -14,6 +14,10 @@ let gl = webgl.loadGL();
 let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
 let frag = await webgl.loadShader(gl, "raymarch.frag");
 
+// let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
+// console.log(ext.getTranslatedShaderSource(vert));
+// console.log(ext.getTranslatedShaderSource(frag));
+
 let program = util.nonnull(gl.createProgram());
 gl.attachShader(program, vert);
 gl.attachShader(program, frag);
