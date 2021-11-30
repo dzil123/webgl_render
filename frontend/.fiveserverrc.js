@@ -2,7 +2,7 @@ module.exports = {
   root: "dist",
   mount: {
     // "/": "/dist",
-    src: "src",
+    // src: "src",
   },
   watch: "dist",
   remoteLogs: "magenta",
