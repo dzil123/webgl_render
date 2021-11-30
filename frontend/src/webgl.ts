@@ -5,7 +5,6 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
 
-type GL2Context = WebGL2RenderingContextStrict;
 import GL = WebGLRenderingContextStrict;
 import GL2 = WebGL2RenderingContextStrict;
 
@@ -15,7 +14,7 @@ export function loadGL(): GL2 {
     throw new Error("Expected element to be a canvas");
   }
 
-  let gl = canvas.getContext("webgl2") as any as GL2Context;
+  let gl = canvas.getContext("webgl2") as any as GL2;
   gl = util.nonnull(gl);
 
   return gl;
@@ -34,7 +33,7 @@ async function downloadShader(name: string): Promise<string> {
   return source;
 }
 
-function typeOfShader(gl: GL2Context, name: string): GL.ShaderType {
+function typeOfShader(gl: GL2, name: string): GL.ShaderType {
   if (name.endsWith(".vert")) {
     return gl.VERTEX_SHADER;
   } else if (name.endsWith(".frag")) {
@@ -44,10 +43,7 @@ function typeOfShader(gl: GL2Context, name: string): GL.ShaderType {
   }
 }
 
-export async function loadShader(
-  gl: GL2Context,
-  name: string
-): Promise<WebGLShader> {
+export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
   let source = await downloadShader(name);
 
   let shader = gl.createShader(typeOfShader(gl, name));
@@ -72,6 +68,8 @@ function textureIndex(i: number): GL.TextureUnit {
 
 const globalTextures = util.new_globals<WebGLProgram, number>();
 
+// creates a f32 vec4 datatexture and returns a function to upload data to it
+// this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
 export function texture(
   gl: GL2,
   program: WebGLProgram,

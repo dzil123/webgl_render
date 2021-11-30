@@ -6,6 +6,8 @@ const PORT = 9080
 var _server = WebSocketServer.new()
 
 var clients = []
+var dirty = true
+var last_data = null
 
 func _ready():
 	# Connect base signals to get notified of new client connections,
@@ -29,7 +31,9 @@ func _connected(id, proto):
 	# This is called when a new peer connects, "id" will be the assigned peer id,
 	# "proto" will be the selected WebSocket sub-protocol (which is optional)
 	print("Client %d connected with protocol: %s" % [id, proto])
+	_server.get_peer(id).set_write_mode(WebSocketPeer.WRITE_MODE_TEXT)
 	clients.append(id)
+	dirty = true
 
 
 func _close_request(id, code, reason):
@@ -62,7 +66,14 @@ func _process(delta):
 func send_to_all_clients(data):
 	if clients.size() == 0:
 		return
+
 	data = JSON.print(data)
+
+	if data == last_data and not dirty:
+		return
+	last_data = data
+	dirty = false
+
 #	print(OS.get_time(), " sending: ", data)
 	data = data.to_ascii()
 	for id in clients:
