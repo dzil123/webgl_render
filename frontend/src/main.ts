@@ -46,10 +46,34 @@ uploadSceneSpheres(
 
 let ws_promise = websocket.createWS(message_handler);
 
-while (true) {
-  let sec = (await util.frame()) / 1000;
+let fps_element = util.nonnull(document.getElementById("fps"));
+let fps_avg_element = util.nonnull(document.getElementById("fps_avg"));
+let then = 0;
+let then_then = 0;
+let counter = 0;
+const avg_len = 60;
 
-  uploadGlobals(new Float32Array([sec, 0, 0, 0]));
+while (true) {
+  let now = (await util.frame()) / 1000;
+
+  let delta = now - then;
+  then = now;
+  let fps = 1.0 / delta;
+  let fps_str = fps.toFixed(2);
+  fps_element.innerText = fps_str;
+
+  counter += 1;
+  if (counter >= avg_len) {
+    counter = 0;
+    let delta = now - then_then;
+    then_then = now;
+    let fps = avg_len / delta;
+    let fps_str = fps.toFixed(2);
+    fps_avg_element.innerText = fps_str;
+    console.log(fps_element.innerText, fps_avg_element.innerText);
+  }
+
+  uploadGlobals(new Float32Array([now, 0, 0, 0]));
 
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
