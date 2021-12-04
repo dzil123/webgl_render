@@ -60,7 +60,7 @@ vec4 march(vec3 pos, vec3 dir) {
     pos.y -= sin(TIME) * 0.2;
     pos.x -= TIME;
     pos.z -= TIME * 20.0;
-    const int MAX_STEPS = 500;
+    const int MAX_STEPS = 160;
 
     dir = normalize(dir);
 
