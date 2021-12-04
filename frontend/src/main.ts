@@ -36,7 +36,7 @@ let uploadGlobals = webgl.texture(gl, program, "globals", 1);
 
 uploadCameraMatrix(
   new Float32Array([
-    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, 0, 1, 5, 1,
+    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, -3, 4.5, 4, 1,
   ])
 );
 

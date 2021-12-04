@@ -22,7 +22,7 @@ size = Vector2( 1000, 1000 )
 [node name="Spatial" type="Spatial"]
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( 1, 0, 0, 0, 0.976296, 0.21644, 0, -0.21644, 0.976296, 2, 1.9763, 4.78356 )
+transform = Transform( 1, 0, 0, 0, 0.976296, 0.21644, 0, -0.21644, 0.976296, -3, 4.5, 4 )
 script = ExtResource( 2 )
 
 [node name="Sphere0" type="MeshInstance" parent="."]
