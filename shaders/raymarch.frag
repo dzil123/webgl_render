@@ -13,7 +13,10 @@ uniform sampler2D cameraMatrix;
 uniform sampler2D sceneSpheres;
 uniform sampler2D globals;
 
-#define TIME texelFetch(globals, ivec2(0, 0), 0).x
+#define GLOBALS(x) texelFetch(globals, ivec2(x, 0), 0)
+#define TIME GLOBALS(0).x
+#define FOV radians(GLOBALS(0).y)
+#define ASPECT GLOBALS(0).z
 
 // https://iquilezles.org/www/articles/smin/smin.htm
 float sminCubic(float a, float b, float k) {
@@ -21,12 +24,24 @@ float sminCubic(float a, float b, float k) {
     return min(a, b) - h * h * h * k * (1.0 / 6.0);
 }
 
+float loop(float x, float a, float b) {
+    return mod(x - b, a - b) + b;
+}
+
+void loop2(inout float x, float a, float b) {
+    x = loop(x, a, b);
+}
+
 // instead of distance, give nearest point?
 float scene(vec3 pos) {
+    loop2(pos.z, 5.0, -5.0);
+    loop2(pos.x, 6.0, -4.0);
+    loop2(pos.y, 4.0, -3.0);
+
     float dist = INFINITY;
 
     float time = TIME;
-    float k = -0.1 + 1.5 * abs(sin(time));
+    float k = -0.1 + 4.5 * abs(sin(time));
 
     int numSpheres = textureSize(sceneSpheres, 0).y;
     for (int i = 0; i < numSpheres; i++) {
@@ -41,16 +56,26 @@ float scene(vec3 pos) {
 }
 
 vec4 march(vec3 pos, vec3 dir) {
+    pos.y -= 1.2;
+    pos.y -= sin(TIME) * 0.2;
+    pos.x -= TIME;
+    pos.z -= TIME * 20.0;
+    const int MAX_STEPS = 500;
+
     dir = normalize(dir);
 
     int i;
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < MAX_STEPS; i++) {
         float dist = scene(pos);
         if (dist < 0.0001) {
             break;
         }
 
         pos += dir * dist * 0.99;
+    }
+
+    if (i == MAX_STEPS) {
+        i = -1;
     }
 
     return vec4(pos, i);
@@ -69,22 +94,38 @@ float easeInOutQuint(float x) {
     return x < 0.5 ? 16. * x * x * x * x * x : 1. - pow(-2. * x + 2., 5.) / 2.;
 }
 
-vec3 shade(vec4 pos) {
-    if (pos.y < -2.) {
-        return vec3(0.4, 0.3, 0.1);
-    }
-    if (pos.z < -10.) {
-        return vec3(0.2);
-    }
-
+vec3 shade2(vec4 pos) {
     // return vec3(1.0, smoothstep(3.0, 15.0, pos.w), 0.0);
     vec3 p = step(0.5, fract(pos.xyz * 2.0));
     float f = p.x + p.y + p.z;
+
+    return abs(calcNormal(pos.xyz));
 
     return mix(abs(calcNormal(pos.xyz)), vec3(mod(f, 2.)),
                easeInOutQuint(sin(TIME / 3.0) * 0.5 + 0.5));
 
     return p;
+}
+
+vec3 shade(vec4 pos) {
+    vec3 grey = vec3(0.1, 0.05, 0.05);
+
+    if (pos.y < -14.) {
+        return grey;
+    }
+    if (pos.w < 0.) {
+        return grey;
+    }
+
+    vec3 res = shade2(pos);
+    if (pos.w < 0.) {
+        return res;
+    }
+
+    float k = pow(pos.w / 150.0, 1.5);
+    k = clamp(k, 0.0, 1.0);
+
+    return mix(res, grey, k);
 }
 
 // returns the half extents of the virtual plane in front of the camera
@@ -118,8 +159,8 @@ mat4 camera_transform() {
 }
 
 vec3 main2() {
-    float fov = radians(70.0);
-    float aspect = 2.0;
+    float fov = FOV;
+    float aspect = ASPECT;
 
     mat4 transform = camera_transform();
     vec3 origin = (transform * vec4(vec3(0), 1)).xyz;

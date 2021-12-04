@@ -23,7 +23,7 @@ let uploadCameraMatrix = webgl.texture(gl, program, "cameraMatrix", 4);
 let uploadSceneSpheres = webgl.texture(gl, program, "sceneSpheres", 1);
 let uploadGlobals = webgl.texture(gl, program, "globals", 1);
 uploadCameraMatrix(new Float32Array([
-    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, 0, 1, 5, 1,
+    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, -3, 4.5, 4, 1,
 ]));
 uploadSceneSpheres(new Float32Array([0, 0, -1, 2.7, 3, 1, 0, 1.2, -2, -1, 1, 1]));
 let ws_promise = websocket.createWS(message_handler);
@@ -35,6 +35,7 @@ let counter = 0;
 const avg_len = 60;
 while (true) {
     let now = (await util.frame()) / 1000;
+    webgl.resize(gl);
     let delta = now - then;
     then = now;
     let fps = 1.0 / delta;
@@ -48,9 +49,10 @@ while (true) {
         let fps = avg_len / delta;
         let fps_str = fps.toFixed(2);
         fps_avg_element.innerText = fps_str;
-        console.log(fps_element.innerText, fps_avg_element.innerText);
     }
-    uploadGlobals(new Float32Array([now, 0, 0, 0]));
+    let fov = 70.0;
+    let aspect = gl.canvas.width / gl.canvas.height;
+    uploadGlobals(new Float32Array([now, fov, aspect, 0]));
     gl.clear(gl.COLOR_BUFFER_BIT);
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
 }
