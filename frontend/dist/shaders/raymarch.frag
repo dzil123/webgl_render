@@ -13,7 +13,10 @@ uniform sampler2D cameraMatrix;
 uniform sampler2D sceneSpheres;
 uniform sampler2D globals;
 
-#define TIME texelFetch(globals, ivec2(0, 0), 0).x
+#define GLOBALS(x) texelFetch(globals, ivec2(x, 0), 0)
+#define TIME GLOBALS(0).x
+#define FOV radians(GLOBALS(0).y)
+#define ASPECT GLOBALS(0).z
 
 // https://iquilezles.org/www/articles/smin/smin.htm
 float sminCubic(float a, float b, float k) {
@@ -118,8 +121,8 @@ mat4 camera_transform() {
 }
 
 vec3 main2() {
-    float fov = radians(70.0);
-    float aspect = 2.0;
+    float fov = FOV;
+    float aspect = ASPECT;
 
     mat4 transform = camera_transform();
     vec3 origin = (transform * vec4(vec3(0), 1)).xyz;

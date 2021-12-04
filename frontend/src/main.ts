@@ -56,6 +56,8 @@ const avg_len = 60;
 while (true) {
   let now = (await util.frame()) / 1000;
 
+  webgl.resize(gl);
+
   let delta = now - then;
   then = now;
   let fps = 1.0 / delta;
@@ -70,10 +72,11 @@ while (true) {
     let fps = avg_len / delta;
     let fps_str = fps.toFixed(2);
     fps_avg_element.innerText = fps_str;
-    console.log(fps_element.innerText, fps_avg_element.innerText);
   }
 
-  uploadGlobals(new Float32Array([now, 0, 0, 0]));
+  let fov = 70.0;
+  let aspect = gl.canvas.width / gl.canvas.height;
+  uploadGlobals(new Float32Array([now, fov, aspect, 0]));
 
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);

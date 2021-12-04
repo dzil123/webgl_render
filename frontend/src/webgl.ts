@@ -143,3 +143,24 @@ export function texture(
     );
   }
 }
+
+export function resize(gl: GL2) {
+  let canvas = gl.canvas;
+
+  let dpr = window.devicePixelRatio;
+  dpr = Math.min(dpr, 2);
+  let rect = gl.canvas.getBoundingClientRect();
+
+  let width = Math.round(rect.width * dpr);
+  let height = Math.round(rect.height * dpr);
+
+  if (canvas.width != width || canvas.height != height) {
+    canvas.width = width;
+    canvas.height = height;
+
+    gl.viewport(0, 0, width, height);
+
+    let resolution_element = util.nonnull(document.getElementById("res"));
+    resolution_element.innerText = `${dpr} ${gl.canvas.width} ${gl.canvas.height}`;
+  }
+}
