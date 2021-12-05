@@ -21,7 +21,6 @@ function make_on_message(msg_handler) {
             data_raw = event.data;
         }
         let data = JSON.parse(data_raw);
-        console.log("got", typeof data, JSON.stringify(data));
         status_html.innerText = "connected";
         msg_handler(data);
     }
