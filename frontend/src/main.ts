@@ -6,6 +6,7 @@ import * as websocket from "./websocket.js";
 // import "./demo.js";
 
 function message_handler(data: { [name: string]: any }) {
+  // console.log(data["mat4"]);
   uploadCameraMatrix(new Float32Array(data["mat4"]));
 }
 
@@ -36,7 +37,8 @@ let uploadGlobals = webgl.texture(gl, program, "globals", 1);
 
 uploadCameraMatrix(
   new Float32Array([
-    1, 0, 0, 0, 0, 0.976, -0.216, 0, 0, 0.216, 0.976, 0, -3, 4.5, 4, 1,
+    0.760406, 0, -0.649448, 0, -0.039648, 0.998135, -0.046421, 0, 0.648236,
+    0.061048, 0.758988, 0, 3.823527, 0.299516, 7.624601, 1,
   ])
 );
 

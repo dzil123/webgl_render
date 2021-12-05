@@ -32,16 +32,24 @@ void loop2(inout float x, float a, float b) {
     x = loop(x, a, b);
 }
 
+// https://iquilezles.org/www/articles/distfunctions/distfunctions.htm
+vec3 opRep(in vec3 p, in vec3 c) {
+    return mod(p + 0.5 * c, c) - 0.5 * c;
+}
+
 // instead of distance, give nearest point?
 float scene(vec3 pos) {
-    loop2(pos.z, 5.0, -5.0);
-    loop2(pos.x, 6.0, -4.0);
-    loop2(pos.y, 4.0, -3.0);
+    // pos.x -= 1.0;
+    // pos.y -= 0.5;
+    // loop2(pos.z, 5.0, -5.0);
+    // loop2(pos.x, 6.0, -4.0);
+    // loop2(pos.y, 4.0, -3.0);
+    pos = opRep(pos, vec3(12));
 
     float dist = INFINITY;
 
     float time = TIME;
-    float k = -0.1 + 4.5 * abs(sin(time));
+    float k = 0.1 + 2.0 * (1. + sin(time));
 
     int numSpheres = textureSize(sceneSpheres, 0).y;
     for (int i = 0; i < numSpheres; i++) {
@@ -53,13 +61,16 @@ float scene(vec3 pos) {
     }
 
     return dist;
+    return dist - 2. * (sin(TIME * 0.7) * 0.5 - 0.5);
 }
 
 vec4 march(vec3 pos, vec3 dir) {
-    pos.y -= 1.2;
-    pos.y -= sin(TIME) * 0.2;
-    pos.x -= TIME;
-    pos.z -= TIME * 20.0;
+    float time = 1.;
+
+    // pos.y -= 1.2;
+    // pos.y -= sin(time) * 0.2;
+    // pos.x -= time;
+    // pos.z -= time * 20.0;
     const int MAX_STEPS = 160;
 
     dir = normalize(dir);
@@ -71,7 +82,7 @@ vec4 march(vec3 pos, vec3 dir) {
             break;
         }
 
-        pos += dir * dist * 0.99;
+        pos += dir * dist * 0.9;
     }
 
     if (i == MAX_STEPS) {
@@ -83,7 +94,7 @@ vec4 march(vec3 pos, vec3 dir) {
 
 // https://iquilezles.org/www/articles/normalsSDF/normalsSDF.htm
 vec3 calcNormal(in vec3 p) {
-    const float eps = 0.0001;  // arbitrary
+    const float eps = 0.00001;  // arbitrary
     const vec2 h = vec2(eps, 0);
     return normalize(vec3(scene(p + h.xyy) - scene(p - h.xyy),
                           scene(p + h.yxy) - scene(p - h.yxy),
@@ -99,15 +110,24 @@ vec3 shade2(vec4 pos) {
     vec3 p = step(0.5, fract(pos.xyz * 2.0));
     float f = p.x + p.y + p.z;
 
-    return abs(calcNormal(pos.xyz));
+    // return abs(calcNormal(pos.xyz));
+    // return calcNormal(pos.xyz) * 0.5 + 0.5;
 
-    return mix(abs(calcNormal(pos.xyz)), vec3(mod(f, 2.)),
-               easeInOutQuint(sin(TIME / 3.0) * 0.5 + 0.5));
+    // return mix(abs(calcNormal(pos.xyz)), vec3(mod(f, 2.)),
+    //            easeInOutQuint(sin(TIME / 3.0) * 0.5 + 0.5));
 
     return p;
 }
 
 vec3 shade(vec4 pos) {
+    // return vec3((pos.w - 10.) / 30.);
+
+    // if (pos.w < 0.) {
+    //     return vec3(0.);
+    // }
+
+    // return vec3(1. - smoothstep(TIME * 5.0 + 15., TIME * 5.0 + 20., pos.w));
+
     vec3 grey = vec3(0.1, 0.05, 0.05);
 
     if (pos.y < -14.) {
@@ -124,6 +144,7 @@ vec3 shade(vec4 pos) {
 
     float k = pow(pos.w / 150.0, 1.5);
     k = clamp(k, 0.0, 1.0);
+    k = 0.;
 
     return mix(res, grey, k);
 }

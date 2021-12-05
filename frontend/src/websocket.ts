@@ -35,7 +35,6 @@ function make_on_message(
 
     let data: object = JSON.parse(data_raw);
 
-    console.log("got", typeof data, JSON.stringify(data));
     status_html.innerText = "connected";
 
     msg_handler(data);
