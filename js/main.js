@@ -1,6 +1,5 @@
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
-import * as websocket from "./websocket.js";
 // import "./demo.js";
 function message_handler(data) {
     // console.log(data["mat4"]);
@@ -8,7 +7,7 @@ function message_handler(data) {
 }
 let gl = webgl.loadGL();
 let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
-let frag = await webgl.loadShader(gl, "raymarch.frag");
+let frag = await webgl.loadShader(gl, "raymarch_minimal.frag");
 // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
 // console.log(ext.getTranslatedShaderSource(vert));
 // console.log(ext.getTranslatedShaderSource(frag));
@@ -28,7 +27,7 @@ uploadCameraMatrix(new Float32Array([
     0.061048, 0.758988, 0, 3.823527, 0.299516, 7.624601, 1,
 ]));
 uploadSceneSpheres(new Float32Array([0, 0, -1, 2.7, 3, 1, 0, 1.2, -2, -1, 1, 1]));
-let ws_promise = websocket.createWS(message_handler);
+// let ws_promise = websocket.createWS(message_handler);
 let fps_element = util.nonnull(document.getElementById("fps"));
 let fps_avg_element = util.nonnull(document.getElementById("fps_avg"));
 let then = 0;
