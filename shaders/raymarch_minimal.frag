@@ -16,16 +16,12 @@ vec3 opRep(in vec3 p, in vec3 c) {
 float scene(vec3 pos) {
     pos = opRep(pos, vec3(12));
 
-    float dist = 100000.0;
-
-    dist = min(dist, distance(pos, vec3(0, 0, -1)) - 2.7);
-    dist = min(dist, distance(pos, vec3(3, 1, 0)) - 1.2);
-    dist = min(dist, distance(pos, vec3(-2, -1, 1)) - 1.);
+    float dist = distance(pos, vec3(3, 1, 0)) - 1.2;
 
     return dist;
 }
 
-const int MAX_STEPS = 100;
+const int MAX_STEPS = 40;
 
 // raymarches starting at position pos in the direction dir
 vec4 march(vec3 pos, vec3 dir) {
