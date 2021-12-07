@@ -52,7 +52,8 @@ vec3 shade(vec4 pos) {
         return grey;
     }
 
-    vec3 res = step(0.5, fract(pos.xyz * 2.0));
+    vec3 res = fract(pos.xyz * 2.0);
+    res = 2. * min(res, 1. - res);
     return res;
 }
 
