@@ -1,0 +1,19 @@
+O   ray origin
+D   ray direction
+S   plane point
+N   plane normal
+
+let N = +x
+choose S = (S.x, O.y, O.z)
+S-O = (S.x - O.x, 0, 0)
+(S-O).N = S.x - O.x
+D.N = D.x
+
+(S.x-O.x)/D.x
+
+example
+O = (1,2,3)
+D = (1,0,0)
+Box = +-6
+side N=-x
+(-6-1)/1

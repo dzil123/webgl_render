@@ -12,13 +12,23 @@ vec3 opRep(in vec3 p, in vec3 c) {
     return mod(p + 0.5 * c, c) - 0.5 * c;
 }
 
+const vec3 loop_space = vec3(12);
+
 // returns signed distance from a world-space position to the scene
 float scene(vec3 pos) {
-    pos = opRep(pos, vec3(12));
+    pos = opRep(pos, loop_space);
 
     float dist = distance(pos, vec3(3, 1, 0)) - 1.2;
 
     return dist;
+}
+
+float box_trace(vec3 pos, vec3 dir) {
+    vec3 box = loop_space / 2.;
+
+    vec3 k = (sign(dir) * box - pos) / dir;
+
+    return min(k.x, min(k.y, k.z));
 }
 
 const int MAX_STEPS = 40;
@@ -31,6 +41,7 @@ vec4 march(vec3 pos, vec3 dir) {
         if (dist < 0.0001) {
             break;
         }
+        dist = min(dist, box_trace(pos, dir)+0.1);
 
         pos += dir * dist;
     }
