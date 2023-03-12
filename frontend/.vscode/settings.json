@@ -8,6 +8,7 @@
   "html.format.enable": false,
   "fiveServer.navigate": false,
   // "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.format.enable": false
-  // "typescript.tsserver.log": "normal"
+  "typescript.format.enable": false,
+  // "typescript.tsserver.log": "normal",
+  "editor.tabSize": 2,
 }
