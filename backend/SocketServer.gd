@@ -3,7 +3,7 @@ extends Node
 # The port we will listen to
 const PORT = 9080
 # Our WebSocketServer instance
-var _server = WebSocketServer.new()
+@onready var _server = $WebSocketServer
 
 var clients = []
 var dirty = true
@@ -12,14 +12,14 @@ var last_data = null
 func _ready():
 	# Connect base signals to get notified of new client connections,
 	# disconnections, and disconnect requests.
-	_server.connect("client_connected", self, "_connected")
-	_server.connect("client_disconnected", self, "_disconnected")
-	_server.connect("client_close_request", self, "_close_request")
+	_server.connect("client_connected", self._connected)
+	_server.connect("client_disconnected", self._disconnected)
+	_server.connect("client_close_request", self._close_request)
 	# This signal is emitted when not using the Multiplayer API every time a
 	# full packet is received.
 	# Alternatively, you could check get_peer(PEER_ID).get_available_packets()
 	# in a loop for each connected peer.
-	_server.connect("data_received", self, "_on_data")
+	_server.connect("data_received", self._on_data)
 	# Start listening on the given port.
 	var err = _server.listen(PORT)
 	if err != OK:
@@ -67,7 +67,7 @@ func send_to_all_clients(data):
 	if clients.size() == 0:
 		return
 
-	data = JSON.print(data)
+	data = JSON.stringify(data)
 
 	if data == last_data and not dirty:
 		return

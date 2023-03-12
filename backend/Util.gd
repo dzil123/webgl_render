@@ -1,7 +1,7 @@
 class_name Util
 extends Object
 
-static func to_mat4(transform: Transform):
+static func to_mat4(transform: Transform3D):
 	var b = transform.basis
 	var t = transform.origin
 

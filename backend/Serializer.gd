@@ -1,6 +1,6 @@
 extends Node
 
-onready var server = $SocketServer
+@onready var server = $SocketServer
 
 func serialize():
 	var camera = get_viewport().get_camera()
