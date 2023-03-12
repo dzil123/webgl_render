@@ -1,7 +1,6 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://SocketServer.gd" type="Script" id=1]
-[ext_resource path="res://CameraSer.gd" type="Script" id=2]
 [ext_resource path="res://Serializer.gd" type="Script" id=3]
 [ext_resource path="res://maujoe.camera_control/scripts/camera_control.gd" type="Script" id=4]
 
@@ -29,27 +28,23 @@ collisions = false
 max_speed = Vector3( 5, 5, 5 )
 
 [node name="Camera" type="Camera" parent="CameraHolder"]
-script = ExtResource( 2 )
 
 [node name="Sphere0" type="MeshInstance" parent="."]
 transform = Transform( 2.7, 0, 0, 0, 2.7, 0, 0, 0, 2.7, 0, 0, -1 )
 mesh = SubResource( 2 )
-material/0 = null
 
 [node name="Sphere1" type="MeshInstance" parent="."]
 transform = Transform( 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3, 1, 0 )
 mesh = SubResource( 2 )
-material/0 = null
 
 [node name="Sphere2" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -1, 1 )
 mesh = SubResource( 2 )
-material/0 = null
 
 [node name="Plane" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, -0.73333, -1.96329, 0.56158 )
+transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, -0.44108, -1.91184, 0.540368 )
+visible = false
 mesh = SubResource( 4 )
-material/0 = null
 
 [node name="Serializer" type="Node" parent="."]
 script = ExtResource( 3 )

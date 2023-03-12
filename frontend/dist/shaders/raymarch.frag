@@ -44,7 +44,7 @@ float scene(vec3 pos) {
     // loop2(pos.z, 5.0, -5.0);
     // loop2(pos.x, 6.0, -4.0);
     // loop2(pos.y, 4.0, -3.0);
-    pos = opRep(pos, vec3(12));
+    // pos = opRep(pos, vec3(12));
 
     float dist = INFINITY;
 
@@ -61,7 +61,7 @@ float scene(vec3 pos) {
     }
 
     return dist;
-    return dist - 2. * (sin(TIME * 0.7) * 0.5 - 0.5);
+    // return dist - 2. * (sin(TIME * 0.7) * 0.5 - 0.5);
 }
 
 vec4 march(vec3 pos, vec3 dir) {
@@ -82,7 +82,7 @@ vec4 march(vec3 pos, vec3 dir) {
             break;
         }
 
-        pos += dir * dist * 0.9;
+        pos += dir * dist * 0.95;
     }
 
     if (i == MAX_STEPS) {
@@ -94,7 +94,7 @@ vec4 march(vec3 pos, vec3 dir) {
 
 // https://iquilezles.org/www/articles/normalsSDF/normalsSDF.htm
 vec3 calcNormal(in vec3 p) {
-    const float eps = 0.00001;  // arbitrary
+    const float eps = 0.0001;  // arbitrary
     const vec2 h = vec2(eps, 0);
     return normalize(vec3(scene(p + h.xyy) - scene(p - h.xyy),
                           scene(p + h.yxy) - scene(p - h.yxy),
@@ -106,12 +106,16 @@ float easeInOutQuint(float x) {
 }
 
 vec3 shade2(vec4 pos) {
-    // return vec3(1.0, smoothstep(3.0, 15.0, pos.w), 0.0);
+    // return vec3(1.0, smoothstep(3.0, 20.0, pos.w), 0.0);
     vec3 p = step(0.5, fract(pos.xyz * 2.0));
     float f = p.x + p.y + p.z;
 
+    vec3 normal = calcNormal(pos.xyz);
+    vec3 l = normalize(vec3(3., 5, 2.));
+
     // return abs(calcNormal(pos.xyz));
-    // return calcNormal(pos.xyz) * 0.5 + 0.5;
+    // return calcNormal(pos.xyz).zzz * 0.5 + 0.5;
+    return vec3(step(0.7, dot(normal, l)) + 0.7);
 
     // return mix(abs(calcNormal(pos.xyz)), vec3(mod(f, 2.)),
     //            easeInOutQuint(sin(TIME / 3.0) * 0.5 + 0.5));
@@ -144,7 +148,7 @@ vec3 shade(vec4 pos) {
 
     float k = pow(pos.w / 150.0, 1.5);
     k = clamp(k, 0.0, 1.0);
-    k = 0.;
+    // k = 0.;
 
     return mix(res, grey, k);
 }

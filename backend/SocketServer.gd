@@ -1,3 +1,4 @@
+tool
 extends Node
 
 # The port we will listen to
