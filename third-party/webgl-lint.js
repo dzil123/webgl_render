@@ -1,4 +1,4 @@
-/* webgl-lint@1.9.1, license MIT */
+/* webgl-lint@1.10.1, license MIT */
 (function (factory) {
   typeof define === 'function' && define.amd ? define(factory) :
   factory();
@@ -1113,12 +1113,12 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           for (let mipLevel = baseLevel; mipLevel <= lastMip; ++mipLevel) {
             const faceMips = mips[mipLevel];
             if (!faceMips) {
-              return `filtering is set to use mips (TEXTURE_MIN_FILTER = ${glEnumToString(minFilter)}) but mip level ${mipLevel} does not exist`;
+              return `filtering is set to use mips from level ${baseLevel} to ${lastMip} with (TEXTURE_MIN_FILTER = ${glEnumToString(minFilter)}) but mip level ${mipLevel} does not exist`;
             }
             for (let face = 0; face < numFaces; ++face) {
               const mip = faceMips[face];
               if (!mip) {
-                return `filtering is set to use mips (TEXTURE_MIN_FILTER = ${glEnumToString(minFilter)}) but mip level ${mipLevel}${getFaceTarget(face, type)} does not exist`;
+                return `filtering is set to use mips level ${baseLevel} to ${lastMip} with (TEXTURE_MIN_FILTER = ${glEnumToString(minFilter)}) but mip level ${mipLevel}${getFaceTarget(face, type)} does not exist`;
               }
               if (mip.width !== mipWidth ||
                   mip.height !== mipHeight ||
@@ -1126,7 +1126,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
                 return `mip level ${mipLevel}${getFaceTarget(face, type)} needs to be ${getDimensionsString(type, mipWidth, mipHeight, mipDepth)} but it is ${getDimensionsString(type, mip.width, mip.height, mip.depth)}`;
               }
               if (mip.internalFormatString !== baseInternalFormatString) {
-                return `mip level ${mipLevel}${getFaceTarget(face, type)}'s internal format ${mip.internalFormatString} does not match mip level 0's internal format ${baseInternalFormatString}`;
+                return `mip level ${mipLevel}${getFaceTarget(face, type)}'s internal format ${mip.internalFormatString} does not match mip level ${baseLevel}'s internal format ${baseInternalFormatString}`;
               }
             }
             mipWidth = Math.max(1, mipWidth / 2 | 0);
@@ -1283,11 +1283,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         const baseLevel = parameters.get(TEXTURE_BASE_LEVEL) || 0;
         const baseLevelFaces = mips[baseLevel];
         if (!baseLevelFaces) {
-          return 'no mip level 0';
+          return `no mip level ${baseLevel}`;
         }
         const baseMipFace = baseLevelFaces[0];
         if (!baseMipFace) {
-          return 'TEXTURE_CUBE_MAP_POSITIVE_X face does not exist';
+          return `TEXTURE_CUBE_MAP_POSITIVE_X face at mip level ${baseLevel} does not exist`;
         }
         const textureNumberType = getNumberTypeForInternalFormat(baseMipFace.internalFormat);
         const neededNumberType = getNumberTypeForUniformSamplerType(uniformType);
@@ -1436,8 +1436,13 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
         generateMipmap(ctx, funcName, args) {
           const [target] = args;
-          const {width, height, depth, internalFormat, type} = getMipInfoForTarget(target, 0);
-          const numMipsNeeded = computeNumMipsNeeded(width, height, depth);
+          const textureInfo = getTextureInfoForTarget(target);
+          const {parameters} = textureInfo;
+          const baseLevel = parameters.get(TEXTURE_BASE_LEVEL) || 0;
+          const maxLevel = parameters.get(TEXTURE_MAX_LEVEL) || maxMips;
+          const mipInfo = getMipInfoForTarget(target, baseLevel);
+          const {width, height, depth, internalFormat, type} = mipInfo;
+          const numMipsNeeded = Math.min(computeNumMipsNeeded(width, height, depth), (maxLevel + 1) - baseLevel);
           const numFaces = target === TEXTURE_CUBE_MAP$2 ? 6 : 1;
           let w = width;
           let h = height;
@@ -1453,7 +1458,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
               const faceTarget =  target === TEXTURE_CUBE_MAP$2
                  ? TEXTURE_CUBE_MAP_POSITIVE_X$1 + face
                  : target;
-              setMipFaceInfoForTarget(faceTarget, level, internalFormat, w, h, d, type);
+              setMipFaceInfoForTarget(faceTarget, baseLevel + level, internalFormat, w, h, d, type);
             }
           }
         },
@@ -1583,6 +1588,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
   }
 
+  const augmentedSet = new Set();
+
   /**
    * Given a WebGL context replaces all the functions with wrapped functions
    * that call gl.getError after every command
@@ -1590,7 +1597,13 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
    * @param {WebGLRenderingContext|Extension} ctx The webgl context to wrap.
    * @param {string} nameOfClass (eg, webgl, webgl2, OES_texture_float)
    */
-  function augmentAPI(ctx, nameOfClass, options = {}) {
+  function augmentAPI(ctx, nameOfClass, options = {}) {  // eslint-disable-line consistent-return
+
+    if (augmentedSet.has(ctx)) {
+      return ctx;
+    }
+    augmentedSet.add(ctx);
+
     const origGLErrorFn = options.origGLErrorFn || ctx.getError;
     addEnumsFromAPI(ctx);
 
@@ -1839,7 +1852,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         5: { enums: [0, 2], numbers: [-1, 3, 4], arrays: { 1: checkBufferSourceWithOffsetAndLength } },  // WebGL2
       },
       'bufferSubData': {
-        3: { enums: [0], numbers: [1], arrays: [2] },
+        3: { enums: [0], numbers: [1], arrays: {2: checkBufferSource} },
         4: { enums: [0], numbers: [1, 3], arrays: {2: checkBufferSourceWithOffset} },  // WebGL2
         5: { enums: [0], numbers: [1, 3, 4], arrays: {2: checkBufferSourceWithOffsetAndLength} },  // WebGL2
       },
@@ -2106,6 +2119,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       'getActiveUniforms': { 3: { enums: [2] }, arrays: [1]},  // WebGL2
       'getActiveUniformBlockParameter': { 3: { enums: [2], numbers: [1] }},  // WebGL2
       'getActiveUniformBlockName': { 2: {numbers: [1]}}, // WebGL2
+      'transformFeedbackVaryings': { 3: {enums: [2]}}, // WebGL2
       'uniformBlockBinding': { 3: { numbers: [1, 2]}}, // WebGL2
     };
     for (const [name, fnInfos] of Object.entries(glFunctionInfos)) {
@@ -2138,6 +2152,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     function removeChecks() {
       for (const {ctx, origFuncs} of Object.values(apis)) {
         Object.assign(ctx, origFuncs);
+        augmentedSet.delete(ctx);
       }
       for (const key of [...Object.keys(sharedState)]) {
         delete sharedState[key];
@@ -2265,6 +2280,23 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       }
     }
 
+    function checkTextureTypeInSameSamplerLocation(ctx, funcName, args){
+      const uniformSamplerInfos = programToUniformSamplerValues.get(sharedState.currentProgram);
+      const uniformSamplersMap = new Map();
+      for (const {type, values, name} of uniformSamplerInfos) {
+        const value = values[0];
+        const uniformSamplerType = uniformSamplersMap.get(value);
+        if (!uniformSamplerType){
+          uniformSamplersMap.set(value, type);
+        } else {
+          if (uniformSamplerType !== type){
+            reportFunctionError(ctx, funcName, args, `Two textures of different types can't use the same sampler location. uniform ${getUniformTypeInfo(type).name} ${getUniformElementName(name, values.length, 0)} is not ${getUniformTypeInfo(uniformSamplerType).name}`);
+            return;
+          }
+        }
+      }
+    }
+
     function checkUnsetUniformsAndUnrenderableTextures(ctx, funcName, args) {
       if (!sharedState.currentProgram) {
         reportFunctionError(ctx, funcName, args, 'no current program');
@@ -2272,6 +2304,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       }
       checkUnsetUniforms(ctx, funcName, args);
       checkUnRenderableTextures(ctx, funcName, args);
+      checkTextureTypeInSameSamplerLocation(ctx, funcName, args);
     }
 
     const preChecks = {
@@ -2332,6 +2365,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
     function isUniformIgnored(webglUniformLocation) {
       return isUniformNameIgnored(locationsToNamesMap.get(webglUniformLocation));
+    }
+
+    function isUniformBlock(ctx, args){
+      const [program, name] = args;
+      return isWebGL2(ctx) && ctx.getUniformIndices(program, [name])[0] !== ctx.INVALID_INDEX;
     }
 
     function markUniformSetMatrixV(numValuesPer) {
@@ -2447,7 +2485,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       //   void bufferSubData(GLenum target, GLintptr dstByteOffset, [AllowShared] ArrayBufferView srcData,
       //                      GLuint srcOffset, optional GLuint length = 0);
       bufferSubData(gl, funcName, args) {
-        const [target, dstByteOffset, src, srcOffset, length = 0] = args;
+        const [target, dstByteOffset, src, srcOffset = 0, length = 0] = args;
         if (target !== gl.ELEMENT_ARRAY_BUFFER) {
           return;
         }
@@ -2461,7 +2499,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         const elemSize = isDataView ? 1 : src.BYTES_PER_ELEMENT;
         const copySize = copyLength * elemSize;
         const arrayBuffer = src.buffer ? src.buffer : src;
-        const newView = new Uint8Array(arrayBuffer, srcOffset * elemSize, copySize);
+        const viewOffset = src.byteOffset || 0;
+        const newView = new Uint8Array(arrayBuffer, viewOffset + srcOffset * elemSize, copySize);
         view.set(newView, dstByteOffset);
       },
 
@@ -2555,7 +2594,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           locationsToNamesMap.set(location, name);
           programToLocationsMap.get(program).add(location);
         } else {
-          if (!isUniformNameIgnored(name)) {
+          if (!isUniformNameIgnored(name) && !isUniformBlock(ctx, args)) {
             warnOrThrowFunctionError(
                 ctx,
                 funcName,
@@ -2813,6 +2852,18 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       checkTypedArray(ctx, funcName, args, arg, ndx, offset, length);
     }
 
+    function checkBufferSource(ctx, funcName, args, arg, ndx) {
+      if (isTypedArray(arg) && isArrayThatCanHaveBadValues(arg)) {
+        const offset = 0;
+        const length = arg.length - offset;
+        checkTypedArray(ctx, funcName, args, arg, ndx, offset, length);
+      } else {
+        if (Array.isArray(arg)) {
+          reportFunctionError(ctx, funcName, args, `argument ${ndx} is not an ArrayBufferView or ArrayBuffer`);
+        }
+      }
+    }
+
     function checkBufferSourceWithOffset(ctx, funcName, args, arg, ndx) {
       if (isTypedArray(arg) && isArrayThatCanHaveBadValues(arg)) {
         const offset = args[args.length - 1];
@@ -3000,7 +3051,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
               const isArrayLike = Array.isArray(arg) || isTypedArray(arg);
               if (arraySetting >= 0) {
                 if (!isArrayLike) {
-                  reportFunctionError(ctx, funcName, args, `argument ${ndx} is not a array or typedarray`);
+                  reportFunctionError(ctx, funcName, args, `argument ${ndx} is not am array or typedarray`);
                   return;
                 }
               }
