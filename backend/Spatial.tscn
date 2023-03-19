@@ -1,14 +1,9 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://SocketServer.gd" type="Script" id=1]
+[ext_resource path="res://Sphere.tscn" type="PackedScene" id=2]
 [ext_resource path="res://Serializer.gd" type="Script" id=3]
 [ext_resource path="res://maujoe.camera_control/scripts/camera_control.gd" type="Script" id=4]
-
-[sub_resource type="SpatialMaterial" id=1]
-albedo_color = Color( 1, 0.831373, 0.831373, 1 )
-
-[sub_resource type="SphereMesh" id=2]
-material = SubResource( 1 )
 
 [sub_resource type="SpatialMaterial" id=3]
 flags_transparent = true
@@ -29,17 +24,35 @@ max_speed = Vector3( 5, 5, 5 )
 
 [node name="Camera" type="Camera" parent="CameraHolder"]
 
-[node name="Sphere0" type="MeshInstance" parent="."]
+[node name="Sphere0" parent="." instance=ExtResource( 2 )]
 transform = Transform( 2.7, 0, 0, 0, 2.7, 0, 0, 0, 2.7, 0, 0, -1 )
-mesh = SubResource( 2 )
 
-[node name="Sphere1" type="MeshInstance" parent="."]
+[node name="Sphere3" parent="." instance=ExtResource( 2 )]
+transform = Transform( 500, 0, 0, 0, 500, 0, 0, 0, 500, 0, -505, -1 )
+
+[node name="Sphere1" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1.2, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 3, 1, 0 )
-mesh = SubResource( 2 )
 
-[node name="Sphere2" type="MeshInstance" parent="."]
+[node name="Sphere2" parent="." instance=ExtResource( 2 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -2, -1, 1 )
-mesh = SubResource( 2 )
+
+[node name="Sphere4" parent="." instance=ExtResource( 2 )]
+transform = Transform( 0.84411, 0, 2.56466, 0, 2.7, 0, -2.56466, 0, 0.84411, -7.83108, 3.69921, 0.162304 )
+
+[node name="Sphere5" parent="." instance=ExtResource( 2 )]
+transform = Transform( 0.37516, 0, 1.13985, 0, 1.2, 0, -1.13985, 0, 0.37516, -5.94331, 4.69921, -2.37468 )
+
+[node name="Sphere6" parent="." instance=ExtResource( 2 )]
+transform = Transform( 0.312633, 0, 0.949874, 0, 1, 0, -0.949874, 0, 0.312633, -6.5566, 2.69921, 2.68732 )
+
+[node name="Sphere7" parent="." instance=ExtResource( 2 )]
+transform = Transform( 1.22697, -1.99913, -1.33717, 1.35159, 1.8148, -1.47299, 1.98941, 0, 1.82545, 7.56256, 8.09955, 1.56754 )
+
+[node name="Sphere8" parent="." instance=ExtResource( 2 )]
+transform = Transform( 0.54532, -0.888501, -0.5943, 0.600708, 0.806577, -0.654663, 0.884181, 0, 0.81131, 7.69019, 9.72792, 4.45409 )
+
+[node name="Sphere9" parent="." instance=ExtResource( 2 )]
+transform = Transform( 0.454433, -0.740418, -0.49525, 0.50059, 0.672147, -0.545552, 0.736817, 0, 0.676092, 6.40361, 5.33512, 1.4461 )
 
 [node name="Plane" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, -0.44108, -1.91184, 0.540368 )

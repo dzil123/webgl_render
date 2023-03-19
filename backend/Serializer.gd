@@ -21,9 +21,18 @@ func get_camera():
 	else:
 		return get_viewport().get_camera()
 
+func get_objects():
+	var spheres = []
+	for sphere in get_tree().get_nodes_in_group("object_sphere"):
+		spheres.append(sphere.translation.x)
+		spheres.append(sphere.translation.y)
+		spheres.append(sphere.translation.z)
+		spheres.append(sphere.scale.x)
+	return {"sphere": spheres}
+
 func serialize():
 	var camera = get_camera()
-	var data = {"mat4": Util.to_mat4(camera.global_transform), "fov": camera.fov}
+	var data = {"mat4": Util.to_mat4(camera.global_transform), "fov": camera.fov, "objects": get_objects()}
 
 	return data
 

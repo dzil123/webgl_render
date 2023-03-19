@@ -8,6 +8,7 @@ import * as websocket from "./websocket.js";
 function message_handler(data: { [name: string]: any }) {
   // console.log(data["mat4"]);
   uploadCameraMatrix(new Float32Array(data["mat4"]));
+  uploadSceneSpheres(new Float32Array(data["objects"]["sphere"]));
 }
 
 let gl = webgl.loadGL();
