@@ -5,6 +5,7 @@ import * as websocket from "./websocket.js";
 function message_handler(data) {
     // console.log(data["mat4"]);
     uploadCameraMatrix(new Float32Array(data["mat4"]));
+    uploadSceneSpheres(new Float32Array(data["objects"]["sphere"]));
 }
 let gl = webgl.loadGL();
 let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
