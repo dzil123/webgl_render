@@ -1,15 +1,9 @@
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
-import * as websocket from "./websocket.js";
 // import "./demo.js";
-function message_handler(data) {
-    // console.log(data["mat4"]);
-    uploadCameraMatrix(new Float32Array(data["mat4"]));
-    uploadSceneSpheres(new Float32Array(data["objects"]["sphere"]));
-}
 let gl = webgl.loadGL();
-let vert = await webgl.loadShader(gl, "fullscreen_tri.vert");
-let frag = await webgl.loadShader(gl, "raymarch.frag");
+let vert = await webgl.loadShader(gl, "particle.vert");
+let frag = await webgl.loadShader(gl, "particle.frag");
 // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
 // console.log(ext.getTranslatedShaderSource(vert));
 // console.log(ext.getTranslatedShaderSource(frag));
@@ -18,18 +12,28 @@ gl.attachShader(program, vert);
 gl.attachShader(program, frag);
 gl.linkProgram(program);
 let aspect = gl.canvas.width / gl.canvas.height;
-gl.clearColor(1.0, 1.0, 1.0, 1.0);
+gl.clearColor(0.5, 0.5, 0.5, 1.0);
 gl.useProgram(program);
+const num_verts = 5;
+let [vertexData, indexData] = generate_polygon(num_verts);
+let indexBuffer = util.nonnull(gl.createBuffer());
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indexData, gl.STATIC_DRAW);
+let vertexBuffer = util.nonnull(gl.createBuffer());
+gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+gl.bufferData(gl.ARRAY_BUFFER, vertexData, gl.STATIC_DRAW);
+{
+    const vertexPosition = gl.getAttribLocation(program, "pos");
+    const numComponents = 2; // pull out 2 values per iteration
+    const type = gl.FLOAT; // the data in the buffer is 32bit floats
+    const normalize = false; // don't normalize
+    const stride = 0; // how many bytes to get from one set of values to the next
+    // 0 = use type and numComponents above
+    const offset = 0; // how many bytes inside the buffer to start from
+    gl.vertexAttribPointer(vertexPosition, numComponents, type, normalize, stride, offset);
+    gl.enableVertexAttribArray(vertexPosition);
+}
 // framebuffer vs renderbuffer
-let uploadCameraMatrix = webgl.texture(gl, program, "cameraMatrix", 4);
-let uploadSceneSpheres = webgl.texture(gl, program, "sceneSpheres", 1);
-let uploadGlobals = webgl.texture(gl, program, "globals", 1);
-uploadCameraMatrix(new Float32Array([
-    0.760406, 0, -0.649448, 0, -0.039648, 0.998135, -0.046421, 0, 0.648236,
-    0.061048, 0.758988, 0, 3.823527, 0.299516, 7.624601, 1,
-]));
-uploadSceneSpheres(new Float32Array([0, 0, -1, 2.7, 3, 1, 0, 1.2, -2, -1, 1, 1]));
-let ws_promise = websocket.createWS(message_handler);
 let fps_element = util.nonnull(document.getElementById("fps"));
 let fps_avg_element = util.nonnull(document.getElementById("fps_avg"));
 let then = 0;
@@ -55,8 +59,28 @@ while (true) {
     }
     let fov = 70.0;
     let aspect = gl.canvas.width / gl.canvas.height;
-    uploadGlobals(new Float32Array([now, fov, aspect, 0]));
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+    gl.drawElements(gl.TRIANGLES, indexData.length, gl.UNSIGNED_BYTE, 0);
+}
+function generate_polygon(count) {
+    let delta_angle = (Math.PI * 2) / count;
+    let start_angle = delta_angle * -0.5;
+    let scale = 1.0 / Math.cos(start_angle);
+    let array = new Float32Array(count * 2);
+    for (let i = 0; i < count; i++) {
+        let angle = start_angle + delta_angle * i;
+        console.log((angle * 180) / Math.PI);
+        array[i * 2] = Math.sin(angle) * scale;
+        array[i * 2 + 1] = -Math.cos(angle) * scale;
+    }
+    console.log(array);
+    let indexArray = new Uint8Array((count - 2) * 3);
+    for (let i = 0; i < count; i++) {
+        indexArray[i * 3] = 0;
+        indexArray[i * 3 + 1] = i + 1;
+        indexArray[i * 3 + 2] = i + 2;
+    }
+    console.log(indexArray);
+    return [array, indexArray];
 }
 //# sourceMappingURL=main.js.map

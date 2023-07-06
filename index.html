@@ -10,20 +10,26 @@
     </script>
     <style>
       #canvas {
-        width: 100%;
-        max-width: 150vh;
-        max-height: calc(90vh - 6em);
-        aspect-ratio: 16 / 10;
-        display: block;
+        width: 95vmin;
+        height: 95vmin;
         padding: 0;
+        margin: auto 2vmin;
+        border: 5px double black;
+      }
+      #info {
+        margin-top: 50px;
+        vertical-align: top;
+        display: inline-block;
       }
     </style>
   </head>
   <body>
     <canvas id="canvas"></canvas>
-    <p>WebSocket status: <span id="websocket_status">unloaded</span></p>
-    <p>FPS: <span id="fps"></span></p>
-    <p>FPS avg: <span id="fps_avg"></span></p>
-    <p>Resolution: <span id="res"></span></p>
+    <div id="info">
+      <!-- <p>WebSocket status: <span id="websocket_status">unloaded</span></p> -->
+      <p>FPS: <span id="fps"></span></p>
+      <p>FPS avg: <span id="fps_avg"></span></p>
+      <p>Resolution: <span id="res"></span></p>
+    </div>
   </body>
 </html>
