@@ -1,4 +1,4 @@
-/* webgl-lint@1.10.1, license MIT */
+/* webgl-lint@1.11.2, license MIT */
 (function (factory) {
   typeof define === 'function' && define.amd ? define(factory) :
   factory();
@@ -320,6 +320,16 @@
   function getAttributeTypeInfo(type) {
     return attrTypeMap.get(type);
   }
+
+  const createWeakRef = obj => obj ? new WeakRef(obj) : null;
+  const isObjectRefEqual = (ref, obj) => {
+    const refed = ref?.deref();
+    // check they both reference something or both don't reference something.
+    if (!!refed !== !!obj) {
+      return false;
+    }
+    return refed ? refed === obj : true;
+  };
 
   const VERTEX_ATTRIB_ARRAY_DIVISOR = 0x88FE;
 
@@ -803,6 +813,18 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
   }
 
+  const twoDFaceTargets = [
+    TEXTURE_2D$2,
+  ];
+  const cubeMapFaceTargets = [
+    TEXTURE_CUBE_MAP_POSITIVE_X$1,
+    TEXTURE_CUBE_MAP_NEGATIVE_X$1,
+    TEXTURE_CUBE_MAP_POSITIVE_Y$1,
+    TEXTURE_CUBE_MAP_NEGATIVE_Y$1,
+    TEXTURE_CUBE_MAP_POSITIVE_Z$1,
+    TEXTURE_CUBE_MAP_NEGATIVE_Z$1,
+  ];
+
   /*
   const targetToBindPointMap = new Map([
     [TEXTURE_2D, TEXTURE_2D],
@@ -958,10 +980,10 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
        [RGBA16I,            { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [8],        type: [SHORT$1], }],
        [RGBA32I,            { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [16],       type: [INT$1], }],
        [RGBA32UI,           { textureFormat: RGBA_INTEGER,    colorRenderable: true,  textureFilterable: false, bytesPerElement: [16],       type: [UNSIGNED_INT$1], }],
-        // Sized Internal
-       [DEPTH_COMPONENT16,  { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [2, 4],     type: [UNSIGNED_SHORT$1, UNSIGNED_INT$1], }],
-       [DEPTH_COMPONENT24,  { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT$1], }],
-       [DEPTH_COMPONENT32F, { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [FLOAT$1], }],
+        // Sized Internal                                                                         these are marked as not filterable but for some reason they apparently are?
+       [DEPTH_COMPONENT16,  { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: true/*false*/, bytesPerElement: [2, 4],     type: [UNSIGNED_SHORT$1, UNSIGNED_INT$1], }],
+       [DEPTH_COMPONENT24,  { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: true/*false*/, bytesPerElement: [4],        type: [UNSIGNED_INT$1], }],
+       [DEPTH_COMPONENT32F, { textureFormat: DEPTH_COMPONENT, colorRenderable: true,  textureFilterable: true/*false*/, bytesPerElement: [4],        type: [FLOAT$1], }],
        [DEPTH24_STENCIL8,   { textureFormat: DEPTH_STENCIL,   colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [UNSIGNED_INT_24_8], }],
        [DEPTH32F_STENCIL8,  { textureFormat: DEPTH_STENCIL,   colorRenderable: true,  textureFilterable: false, bytesPerElement: [4],        type: [FLOAT_32_UNSIGNED_INT_24_8_REV], }],
     ]);
@@ -1039,7 +1061,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
   }
 
   class TextureManager {
-    constructor(gl) {
+    constructor(gl, redundantStateSetting) {
+      this.redundantStateSetting = redundantStateSetting;
       const isWebGL2$1 = isWebGL2(gl);
       const needPOT = !isWebGL2$1;
       const extensions = new Set();
@@ -1318,6 +1341,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         recomputeRenderability(textureInfo);
       }
 
+
       this.postChecks = {
         activeTexture(ctx, funcName, args) {
           const unit = args[0] - TEXTURE0;
@@ -1327,15 +1351,20 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
         bindTexture(ctx, funcName, args) {
           const [target, texture] = args;
-          activeTextureUnit.set(getBindPointForTarget(target), texture);
-          if (texture) {
-            const textureInfo = textureToTextureInfoMap.get(texture);
-            if (textureInfo.type) {
-              if (textureInfo.type !== target) {
-                throw new Error('should never get here');
+          const bindPoint = getBindPointForTarget(target);
+          if (activeTextureUnit.get(bindPoint) === texture) {
+            ++redundantStateSetting.bindTexture;
+          } else {
+            activeTextureUnit.set(bindPoint, texture);
+            if (texture) {
+              const textureInfo = textureToTextureInfoMap.get(texture);
+              if (textureInfo.type) {
+                if (textureInfo.type !== target) {
+                  throw new Error('should never get here');
+                }
+              } else {
+                textureInfo.type = target;
               }
-            } else {
-              textureInfo.type = target;
             }
           }
         },
@@ -1379,7 +1408,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
         bindSampler(ctx, funcName, args) {
           const [unit, sampler] = args;
-          textureUnits[unit].set('SAMPLER', sampler);
+          if (sampler === textureUnits[unit].get('SAMPLER')) {
+            ++redundantStateSetting.bindSampler;
+          } else {
+            textureUnits[unit].set('SAMPLER', sampler);
+          }
         },
 
         samplerParameteri(ctx, funcName, args) {
@@ -1411,8 +1444,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           const [target, levels, internalFormat, width, height] = args;
           let w = width;
           let h = height;
+          const faces = target === TEXTURE_CUBE_MAP$2 ? cubeMapFaceTargets : twoDFaceTargets;
           for (let level = 0; level < levels; ++level) {
-            setMipFaceInfoForTarget(target, level, internalFormat, w, h, 1);
+            for (const faceTarget of faces) {
+              setMipFaceInfoForTarget(faceTarget, level, internalFormat, w, h, 1);
+            }
             w = Math.max(1, (w / 2) | 0);
             h = Math.max(1, (h / 2) | 0);
           }
@@ -1476,6 +1512,107 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         texParameteri(ctx, funcName, args) {
           const [target, pname, value] = args;
           setTexParameterForTarget(target, pname, value);
+        },
+      };
+    }
+  }
+
+  class VertexArray {
+    constructor(numAttribs) {
+      this.elementAttribArray = null;
+      this.attribs = [];
+      for (let i = 0; i < numAttribs; ++i) {
+        this.attribs.push({
+          size: 0,
+          type: 0,
+          normalize: false,
+          stride: 0,
+          offset: 0,
+          divisor: 0,
+          buffer: null,
+          iPointer: false,
+        });
+      }
+    }
+    setElementArrayBuffer(redundantStateSetting, buffer) {
+      if (isObjectRefEqual(this.elementAttribArray, buffer)) {
+        ++redundantStateSetting.bindBuffer;
+      } else {
+        this.elementAttribArray = createWeakRef(buffer);
+      }
+    }
+    setAttrib(redundantStateSetting, iPointer, index, size, type, normalize, stride, offset, buffer) {
+      const attrib = this.attribs[index];
+      if (isObjectRefEqual(attrib.buffer, buffer) &&
+          attrib.iPointer === iPointer &&
+          attrib.size === size &&
+          attrib.type === type &&
+          attrib.normalize === normalize &&
+          attrib.stride === stride &&
+          attrib.offset === offset) {
+        ++redundantStateSetting.vertexAttribPointer;
+      } else {
+        Object.assign(attrib, {
+          iPointer, size, type, normalize, stride, offset, buffer: createWeakRef(buffer),
+        });
+      }
+    }
+  }
+
+  class VertexArrayManager {
+    constructor(gl, redundantStateSetting) {
+      this.gl = gl;
+      this.redundantStateSetting = redundantStateSetting;
+      this.numAttribs = gl.getParameter(gl.MAX_VERTEX_ATTRIBS);
+      this.vertexArrays = new WeakMap();
+      this.defaultVertexArray = new VertexArray(this.numAttribs);
+      this.currentVertexArray = this.defaultVertexArray;
+
+      const createVertexArray = (ctx, funcName, args, obj) => {
+        this.vertexArrays.set(obj, new VertexArray(this.numAttribs));
+      };
+
+      const deleteVertexArray = (ctx, funcName, args) => {
+        const [obj] = args;
+        const vertexArray = this.vertexArrays.get(obj);
+        if (this.currentVertexArray === vertexArray) {
+          this.currentVertexArray = this.defaultVertexArray;
+        }
+        this.vertexArrays.delete(obj);
+      };
+
+      const bindVertexArray = (ctx, funcName, args) => {
+        let [vertexArray] = args;
+        vertexArray = vertexArray ? this.vertexArrays.get(vertexArray) : this.defaultVertexArray;
+        if (vertexArray === this.currentVertexArray) {
+          ++this.redundantStateSetting.bindVertexArray;
+        } else {
+          this.currentVertexArray = vertexArray;
+        }
+      };
+
+      this.postChecks = {
+        createVertexArray,
+        createVertexArrayOES: createVertexArray,
+        bindVertexArray,
+        bindVertexArrayOES: bindVertexArray,
+        bindBuffer: (ctx, funcName, args) => {
+          const [target, buffer] = args;
+          if (target === gl.ELEMENT_ARRAY_BUFFER) {
+            this.currentVertexArray.setElementArrayBuffer(this.redundantStateSetting, buffer);
+          }
+        },
+        deleteVertexArray,
+        deleteVertexArrayOES: deleteVertexArray,
+        vertexAttribPointer: (ctx, funcName, args) => {
+          const [index, size, type, normalize, stride, offset] = args;
+          const gl = this.gl;
+          this.currentVertexArray.setAttrib(this.redundantStateSetting, false, index, size, type, normalize, stride, offset, gl.getParameter(gl.ARRAY_BUFFER_BINDING));
+        },
+        vertexAttribIPointer: (ctx, funcName, args) => {
+          const [index, size, type, stride, offset] = args;
+          const gl = this.gl;
+          this.currentVertexArray.setAttrib(this.redundantStateSetting, true, index, size, type, false, stride, offset, gl.getParameter(gl.ARRAY_BUFFER_BINDING));
         },
       };
     }
@@ -1588,7 +1725,26 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
   }
 
+  function createVertexArray() {
+    return {
+      elementArrayBuffer: null,
+      vertexAttribs: [],
+    };
+  }
+
   const augmentedSet = new Set();
+
+  const zeroRedundantState = {
+    useProgram: 0,
+    bindBuffer: 0,
+    bindFramebuffer: 0,
+    bindRenderbuffer: 0,
+    bindSampler: 0,
+    bindTexture: 0,
+    bindVertexArray: 0,
+    enableDisable: 0,
+    vertexAttribPointer: 0,
+  };
 
   /**
    * Given a WebGL context replaces all the functions with wrapped functions
@@ -1608,43 +1764,73 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     addEnumsFromAPI(ctx);
 
     function createSharedState(ctx) {
+      const defaultVertexArray = createVertexArray();
+      const redundantStateSetting = { ...zeroRedundantState };
+      // baseContext is a version of the context that doesn't call the wrappers.
+      // Otherwise, for example, a wrapper will call `gl.getParameter` and that
+      // will call the wrapped version of `gl.getParameter`
+      const baseContext = {};
+      //const getError = ctx.getError;
+      for (const key in ctx) {
+        const origFn = ctx[key];
+        baseContext[key] = typeof origFn === 'function' ? function(...args) {
+            const result = origFn.call(ctx, ...args);
+            //const err = getError.call(ctx);
+            //if (err) {
+            //  console.log(key);
+            //  debugger;
+            //}
+            return result;
+          } : origFn;
+      }
+
+      const gman_debug_helper = {
+        ctx: {
+          tagObject(webglObject, name) {
+            throwIfNotWebGLObject(webglObject);
+            sharedState.webglObjectToNamesMap.set(webglObject, name);
+          },
+          untagObject(webglObject) {
+            throwIfNotWebGLObject(webglObject);
+            sharedState.webglObjectToNamesMap.delete(webglObject);
+          },
+          getTagForObject(webglObject) {
+            return sharedState.webglObjectToNamesMap.get(webglObject);
+          },
+          disable() {
+            removeChecks();
+          },
+          setConfiguration(config) {
+            for (const [key, value] of Object.entries(config)) {
+              if (!(key in sharedState.config)) {
+                throw new Error(`unknown configuration option: ${key}`);
+              }
+              sharedState.config[key] = value;
+            }
+            for (const name of sharedState.config.ignoreUniforms) {
+              sharedState.ignoredUniforms.add(name);
+            }
+          },
+          getAndResetRedundantCallInfo() {
+            const info = { ...redundantStateSetting };
+            Object.assign(redundantStateSetting, zeroRedundantState);
+            if (this._checksRemoved) {
+              for (const key of Object.keys(info)) {
+                info[key] = 'invalid is webgl-lint is no longer running. maxDrawCalls exceeded';
+              }
+            }
+            return info;
+          },
+        },
+      };
+
       const sharedState = {
         baseContext: ctx,
         config: options,
-        apis: {
-          // custom extension
-          gman_debug_helper: {
-            ctx: {
-              tagObject(webglObject, name) {
-                throwIfNotWebGLObject(webglObject);
-                sharedState.webglObjectToNamesMap.set(webglObject, name);
-              },
-              untagObject(webglObject) {
-                throwIfNotWebGLObject(webglObject);
-                sharedState.webglObjectToNamesMap.delete(webglObject);
-              },
-              getTagForObject(webglObject) {
-                return sharedState.webglObjectToNamesMap.get(webglObject);
-              },
-              disable() {
-                removeChecks();
-              },
-              setConfiguration(config) {
-                for (const [key, value] of Object.entries(config)) {
-                  if (!(key in sharedState.config)) {
-                    throw new Error(`unknown configuration option: ${key}`);
-                  }
-                  sharedState.config[key] = value;
-                }
-                for (const name of sharedState.config.ignoreUniforms) {
-                  sharedState.ignoredUniforms.add(name);
-                }
-              },
-            },
-          },
-        },
+        apis: { gman_debug_helper },
         idCounts: {},
-        textureManager: new TextureManager(ctx),
+        textureManager: new TextureManager(baseContext, redundantStateSetting),
+        vertexArrayManager: new VertexArrayManager(baseContext, redundantStateSetting),
         bufferToIndices: new Map(),
         ignoredUniforms: new Set(),
         // Okay or bad? This is a map of all WebGLUniformLocation object looked up
@@ -1694,6 +1880,18 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         // }
         /** @type {WebGLProgram, UniformSamplerInfo[]} */
         programToUniformSamplerValues: new Map(),
+        // state for state tracking
+        defaultVertexArray,
+        webglState: {
+          currentProgram: null,
+          buffers: {},
+          currentReadFramebuffer: null,
+          currentDrawFramebuffer: null,
+          currentRenderbuffer: null,
+          textureUnits: [],
+          enabled: {},
+        },
+        redundantStateSetting,
       };
       return sharedState;
     }
@@ -1713,8 +1911,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       programToUniformSamplerValues,
       programToUnsetUniformsMap,
       textureManager,
+      vertexArrayManager,
       webglObjectToNamesMap,
       idCounts,
+      webglState,
+      redundantStateSetting,
     } = sharedState;
 
     const extensionFuncs = {
@@ -1793,7 +1994,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
       // Textures
 
-      'bindTexture': {2: { enums: [0] }},
+      'bindTexture': {2: { enums: [0], undef: [1] }},
       'activeTexture': {1: { enums: [0, 1] }},
       'getTexParameter': {2: { enums: [0, 1] }},
       'texParameterf': {3: { enums: [0, 1] }},
@@ -1845,7 +2046,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
       // Buffer objects
 
-      'bindBuffer': {2: { enums: [0] }},
+      'bindBuffer': {2: { enums: [0], undef: [1] }},
       'bufferData': {
         3: { enums: [0, 2], numbers: [-1], arrays: [-1] },
         4: { enums: [0, 2], numbers: [-1, 3], arrays: { 1: checkBufferSourceWithOffset } },  // WebGL2
@@ -1873,8 +2074,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         7: { enums: [4, 5], numbers: [0, 1, 2, 3, -6] },
         8: { enums: [4, 5], numbers: [0, 1, 2, 3, 7] },  // WebGL2
       },
-      'bindRenderbuffer': {2: { enums: [0] }},
-      'bindFramebuffer': {2: { enums: [0] }},
+      'bindRenderbuffer': {2: { enums: [0], undef: [1] }},
+      'bindFramebuffer': {2: { enums: [0], undef: [1] }},
       'blitFramebuffer': {10: { enums: { 8: destBufferBitFieldToString, 9:true }, numbers: [0, 1, 2, 3, 4, 5, 6, 7]}},  // WebGL2
       'checkFramebufferStatus': {1: { enums: [0] }},
       'framebufferRenderbuffer': {4: { enums: [0, 1, 2], }},
@@ -1888,6 +2089,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       'readBuffer': {1: { enums: [0] }},  // WebGL2
       'renderbufferStorage': {4: { enums: [0, 1], numbers: [2, 3] }},
       'renderbufferStorageMultisample': {5: { enums: [0, 2], numbers: [1, 3, 4] }},  // WebGL2
+      'bindVertexBuffer': {1: { undef: [1]}},
+      'bindVertexBufferOES': {1: { undef: [1]}},
 
       // Frame buffer operations (clear, blend, depth test, stencil)
 
@@ -1933,15 +2136,15 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       'drawBuffers': {1: { enums: { 0: enumArrayToString, }, arrays: [0] }},  // WebGL2
       'clearBufferfv': {
         3: { enums: [0], numbers: [1], arrays: [2] },  // WebGL2
-        4: { enums: [0], numbers: [1, 2], arrays: [2] },  // WebGL2
+        4: { enums: [0], numbers: [1, 3], arrays: [2] },  // WebGL2
       },
       'clearBufferiv': {
         3: { enums: [0], numbers: [1], arrays: [2] },  // WebGL2
-        4: { enums: [0], numbers: [1, 2], arrays: [2] },  // WebGL2
+        4: { enums: [0], numbers: [1, 3], arrays: [2] },  // WebGL2
       },
       'clearBufferuiv': {
         3: { enums: [0], numbers: [1], arrays: [2] },  // WebGL2
-        4: { enums: [0], numbers: [1, 2], arrays: [2] },  // WebGL2
+        4: { enums: [0], numbers: [1, 3], arrays: [2] },  // WebGL2
       },
       'clearBufferfi': { 4: { enums: [0], numbers: [1, 2, 3] }},  // WebGL2
 
@@ -2109,7 +2312,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
       //  Transform Feedback
 
-      'bindTransformFeedback': { 2: { enums: [0] }},  // WebGL2
+      'bindTransformFeedback': { 2: { enums: [0], undef: [1] }},  // WebGL2
       'beginTransformFeedback': { 1: { enums: [0] }},  // WebGL2
 
       // Uniform Buffer Objects and Transform Feedback Buffers
@@ -2127,6 +2330,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         convertToObjectIfArray(fnInfo, 'enums');
         convertToObjectIfArray(fnInfo, 'numbers');
         convertToObjectIfArray(fnInfo, 'arrays');
+        convertToObjectIfArray(fnInfo, 'undef');
       }
       if (/uniform(\d|Matrix)/.test(name)) {
         fnInfos.errorHelper = getUniformNameErrorMsg;
@@ -2154,6 +2358,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         Object.assign(ctx, origFuncs);
         augmentedSet.delete(ctx);
       }
+      sharedState.apis.gman_debug_helper._checksRemoved = true;
       for (const key of [...Object.keys(sharedState)]) {
         delete sharedState[key];
       }
@@ -2228,7 +2433,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       if (!config.failUnsetUniforms) {
         return;
       }
-      const unsetUniforms = programToUnsetUniformsMap.get(sharedState.currentProgram);
+      const unsetUniforms = programToUnsetUniformsMap.get(webglState.currentProgram);
       if (unsetUniforms) {
         const uniformNames = [];
         for (const [name, {index, unset}] of unsetUniforms) {
@@ -2250,7 +2455,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       if (!config.failUnrenderableTextures) {
         return;
       }
-      const uniformSamplerInfos = programToUniformSamplerValues.get(sharedState.currentProgram);
+      const uniformSamplerInfos = programToUniformSamplerValues.get(webglState.currentProgram);
       const numTextureUnits = textureManager.numTextureUnits;
       for (const {type, values, name} of uniformSamplerInfos) {
         const bindPoint = getBindPointForSampler(type);
@@ -2281,7 +2486,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
 
     function checkTextureTypeInSameSamplerLocation(ctx, funcName, args){
-      const uniformSamplerInfos = programToUniformSamplerValues.get(sharedState.currentProgram);
+      const uniformSamplerInfos = programToUniformSamplerValues.get(webglState.currentProgram);
       const uniformSamplersMap = new Map();
       for (const {type, values, name} of uniformSamplerInfos) {
         const value = values[0];
@@ -2298,7 +2503,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
 
     function checkUnsetUniformsAndUnrenderableTextures(ctx, funcName, args) {
-      if (!sharedState.currentProgram) {
+      if (!webglState.currentProgram) {
         reportFunctionError(ctx, funcName, args, 'no current program');
         return;
       }
@@ -2307,7 +2512,28 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       checkTextureTypeInSameSamplerLocation(ctx, funcName, args);
     }
 
+    function checkBufferSubDataOverflow(ctx, funcName, args) {
+      const [target, dstByteOffset, src, srcOffset = 0, length = 0] = args;
+      const bufferSize = baseContext.getBufferParameter(target, ctx.BUFFER_SIZE);
+      const isDataView = src instanceof DataView || src instanceof ArrayBuffer;
+      const copyLength = length ? length : isDataView
+          ? src.byteLength - srcOffset
+          : src.length - srcOffset;
+      if (bufferSize < dstByteOffset + copyLength) {
+        const binding = getBindingQueryEnumForBindPoint(target);
+        const webglObject = baseContext.getParameter(binding);
+        reportFunctionError(
+          ctx,
+          funcName,
+          args,
+          bufferSize === 0
+            ? `buffer ${getWebGLObjectString(webglObject)} has 0 size. You need to call bufferData before calling bufferSubData.`
+            : `buffer ${getWebGLObjectString(webglObject)} buffer is too small for data [bufferSize:${bufferSize} dstByteOffset(${dstByteOffset}) + copyLength(${copyLength}) = ${dstByteOffset + copyLength}]`);
+      }
+    }
+
     const preChecks = {
+      bufferSubData:checkBufferSubDataOverflow,
       drawArrays: checkUnsetUniformsAndUnrenderableTextures,
       drawElements: checkUnsetUniformsAndUnrenderableTextures,
       drawArraysInstanced: checkUnsetUniformsAndUnrenderableTextures,
@@ -2319,10 +2545,10 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
     function markUniformRangeAsSet(webGLUniformLocation, count) {
       if (!webGLUniformLocation) {
-        throwOrWarn(config.failUndefinedUniforms, config.warnUndefinedUniforms, `attempt to set non-existent uniform on ${getWebGLObjectString(sharedState.currentProgram)}\nSee docs at https://github.com/greggman/webgl-lint/ for how to turn off this check using "warnUndefinedUniforms: false"`);
+        throwOrWarn(config.failUndefinedUniforms, config.warnUndefinedUniforms, `attempt to set non-existent uniform on ${getWebGLObjectString(webglState.currentProgram)}\nSee docs at https://github.com/greggman/webgl-lint/ for how to turn off this check using "warnUndefinedUniforms: false"`);
         return;
       }
-      const unsetUniforms = programToUnsetUniformsMap.get(sharedState.currentProgram);
+      const unsetUniforms = programToUnsetUniformsMap.get(webglState.currentProgram);
       if (!unsetUniforms) {
         // no unset uniforms
         return;
@@ -2346,7 +2572,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         // have all uniforms in this program been set?
         if (!unsetUniforms.size) {
           // yes, so no checking needed for this program anymore
-          programToUnsetUniformsMap.delete(sharedState.currentProgram);
+          programToUnsetUniformsMap.delete(webglState.currentProgram);
         }
       }
     }
@@ -2419,7 +2645,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
     function recordSamplerValues(webglUniformLocation, newValues) {
       const name = locationsToNamesMap.get(webglUniformLocation);
-      const uniformInfos = programToUniformInfoMap.get(sharedState.currentProgram);
+      const uniformInfos = programToUniformInfoMap.get(webglState.currentProgram);
       const {index, type, values} = uniformInfos.get(name);
       if (!uniformTypeIsSampler(type)) {
         return;
@@ -2453,6 +2679,71 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
 
     const postChecks = {
+      enable(gl, funcName, args) {
+        const [pname] = args;
+        if (!!webglState.enabled[pname] === true) {
+          ++redundantStateSetting.enableDisable;
+        } else {
+          webglState.enabled[pname] = true;
+        }
+      },
+      disable(gl, funcName, args) {
+        const [pname] = args;
+        if (!!webglState.enabled[pname] === false) {
+          ++redundantStateSetting.enableDisable;
+        } else {
+          webglState.enabled[pname] = false;
+        }
+      },
+      bindBuffer(gl, funcName, args) {
+        const [target, buffer] = args;
+        switch (target) {
+          case gl.ELEMENT_ARRAY_BUFFER:
+            // handled by VertexArrayManager
+            break;
+          default:
+            if (isObjectRefEqual(webglState.buffers[target], buffer)) {
+              ++redundantStateSetting.bindBuffer;
+            } else {
+              webglState.buffers[target] = createWeakRef(buffer);
+            }
+        }
+      },
+      bindFramebuffer(gl, funcName, args) {
+        const [target, framebuffer] = args;
+        switch (target) {
+          case gl.READ_FRAMEBUFFER:
+            if (isObjectRefEqual(webglState.currentReadFramebuffer, framebuffer)) {
+              ++redundantStateSetting.bindFramebuffer;
+            } else {
+              webglState.currentReadFramebuffer = createWeakRef(framebuffer);
+            }
+            break;
+          case gl.DRAW_FRAMEBUFFER:
+            if (isObjectRefEqual(webglState.currentDrawFramebuffer, framebuffer)) {
+              ++redundantStateSetting.bindFramebuffer;
+            } else {
+              webglState.currentDrawFramebuffer = createWeakRef(framebuffer);
+            }
+            break;
+          case gl.FRAMEBUFFER:
+            if (isObjectRefEqual(webglState.currentDrawFramebuffer, framebuffer) &&
+                isObjectRefEqual(webglState.currentDrawFramebuffer, framebuffer)) {
+              ++redundantStateSetting.bindFramebuffer;
+            } else {
+              webglState.currentDrawFramebuffer = createWeakRef(framebuffer);
+              webglState.currentReadFramebuffer = createWeakRef(framebuffer);
+            }
+        }
+      },
+      bindRenderbuffer(gl, funcName, args) {
+        const [, renderbuffer] = args;
+        if (isObjectRefEqual(webglState.currentRenderbuffer, renderbuffer)) {
+          ++redundantStateSetting.bindRenderbuffer;
+        } else {
+          webglState.currentRenderbuffer = createWeakRef(renderbuffer);
+        }
+      },
       // WebGL1
       //   void bufferData(GLenum target, GLsizeiptr size, GLenum usage);
       //   void bufferData(GLenum target, [AllowShared] BufferSource? srcData, GLenum usage);
@@ -2464,7 +2755,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         if (target !== gl.ELEMENT_ARRAY_BUFFER) {
           return;
         }
-        const buffer = gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);
+        const buffer = baseContext.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);
         if (isNumber(src)) {
           bufferToIndices.set(buffer, new ArrayBuffer(src));
         } else {
@@ -2476,7 +2767,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           const bufSize = copyLength * elemSize;
           const arrayBuffer = src.buffer ? src.buffer : src;
           const viewOffset = src.byteOffset || 0;
-          bufferToIndices.set(buffer, arrayBuffer.slice(viewOffset + srcOffset * elemSize, bufSize));
+          const offset = viewOffset + srcOffset * elemSize;
+          bufferToIndices.set(buffer, arrayBuffer.slice(offset, offset + bufSize));
         }
       },
       // WebGL1
@@ -2489,7 +2781,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         if (target !== gl.ELEMENT_ARRAY_BUFFER) {
           return;
         }
-        const buffer = gl.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);
+        const buffer = baseContext.getParameter(gl.ELEMENT_ARRAY_BUFFER_BINDING);
         const data = bufferToIndices.get(buffer);
         const view = new Uint8Array(data);
         const isDataView = src instanceof DataView;
@@ -2500,7 +2792,8 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
         const copySize = copyLength * elemSize;
         const arrayBuffer = src.buffer ? src.buffer : src;
         const viewOffset = src.byteOffset || 0;
-        const newView = new Uint8Array(arrayBuffer, viewOffset + srcOffset * elemSize, copySize);
+        const offset = viewOffset + srcOffset * elemSize;
+        const newView = new Uint8Array(arrayBuffer, offset, copySize);
         view.set(newView, dstByteOffset);
       },
 
@@ -2509,11 +2802,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           return;
         }
         const [shader] = args;
-        const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
+        const success = baseContext.getShaderParameter(shader, gl.COMPILE_STATUS);
         if (!success) {
-          const log = gl.getShaderInfoLog(shader);
-          const src = addLineNumbersWithError(gl.getShaderSource(shader), log);
-          const type = gl.getShaderParameter(shader, gl.SHADER_TYPE);
+          const log = baseContext.getShaderInfoLog(shader);
+          const src = addLineNumbersWithError(baseContext.getShaderSource(shader), log);
+          const type = baseContext.getShaderParameter(shader, gl.SHADER_TYPE);
           const msg = `failed to compile ${glEnumToString(type)}: ${log}\n------[ shader source ]------\n${src}`;
           reportFunctionError(gl, funcName, args, msg);
         }
@@ -2608,20 +2901,20 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
       linkProgram(gl, funcName, args) {
         const [program] = args;
-        const success = ctx.getProgramParameter(program, gl.LINK_STATUS);
+        const success = baseContext.getProgramParameter(program, gl.LINK_STATUS);
         if (success) {
           discardInfoForProgram(program);
           const unsetUniforms = new Map();
           const uniformInfos = new Map();
           const uniformSamplerValues = [];
-          const numUniforms = ctx.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
+          const numUniforms = baseContext.getProgramParameter(program, gl.ACTIVE_UNIFORMS);
           for (let ii = 0; ii < numUniforms; ++ii) {
             const {name, type, size} = ctx.getActiveUniform(program, ii);
             if (isBuiltIn(name)) {
               continue;
             }
             // skip uniform block uniforms
-            const location = ctx.getUniformLocation(program, name);
+            const location = baseContext.getUniformLocation(program, name);
             if (!location) {
               continue;
             }
@@ -2670,13 +2963,13 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
             programToUnsetUniformsMap.set(program, unsetUniforms);
           }
         } else if (config.failBadShadersAndPrograms) {
-          const shaders = gl.getAttachedShaders(program);
+          const shaders = baseContext.getAttachedShaders(program);
           const shaderMsgs = shaders.map(shader => {
-            const src = addLineNumbersWithError(gl.getShaderSource(shader));
-            const type = gl.getShaderParameter(shader, gl.SHADER_TYPE);
+            const src = addLineNumbersWithError(baseContext.getShaderSource(shader));
+            const type = baseContext.getShaderParameter(shader, gl.SHADER_TYPE);
             return `-------[ ${glEnumToString(type)} ${getWebGLObjectString(shader)} ]-------\n${src}`;
           }).join('\n');
-          const log = gl.getProgramInfoLog(program);
+          const log = baseContext.getProgramInfoLog(program);
           const msg = `failed to link program: ${log}\n${shaderMsgs}`;
           reportFunctionError(gl, funcName, args, msg);
         }
@@ -2684,13 +2977,17 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
 
       useProgram(ctx, funcName, args) {
         const [program] = args;
-        sharedState.currentProgram = program;
+        if (webglState.currentProgram === program) {
+          ++redundantStateSetting.useProgram;
+        } else {
+          webglState.currentProgram = program;
+        }
       },
 
       deleteProgram(ctx, funcName, args) {
         const [program] = args;
-        if (sharedState.currentProgram === program) {
-          sharedState.currentProgram = undefined;
+        if (webglState.currentProgram === program) {
+          webglState.currentProgram = undefined;
         }
         discardInfoForProgram(program);
       },
@@ -2714,16 +3011,17 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       deleteVertexArray: makeDeleteWrapper,
       deleteVertexArrayOES: makeDeleteWrapper,
     };
-    Object.entries(textureManager.postChecks).forEach(([funcName, func]) => {
-      const existingFn = postChecks[funcName] || noop;
-      postChecks[funcName] = function(...args) {
-        existingFn(...args);
-        if (config.failUnrenderableTextures) {
-          func(...args);
-        }
-      };
+    [textureManager, vertexArrayManager].forEach(manager => {
+      Object.entries(manager.postChecks).forEach(([funcName, func]) => {
+        const existingFn = postChecks[funcName] || noop;
+        postChecks[funcName] = function(...args) {
+          existingFn(...args);
+          if (config.failUnrenderableTextures) {
+            func(...args);
+          }
+        };
+      });
     });
-
     /*
     function getWebGLObject(gl, funcName, args, value) {
       const funcInfos = glFunctionInfos[funcName];
@@ -2797,7 +3095,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
                 if (!funcName.startsWith('bind') && argumentIndex === 0) {
                   const binding = getBindingQueryEnumForBindPoint(value);
                   if (binding) {
-                    const webglObject = gl.getParameter(binding);
+                    const webglObject = baseContext.getParameter(binding);
                     if (webglObject) {
                       return `${glEnumToString(value)}{${getWebGLObjectString(webglObject)}}`;
                     }
@@ -2901,7 +3199,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       if (!webglUniformLocation) {
         return;
       }
-      const uniformInfos = programToUniformInfoMap.get(sharedState.currentProgram);
+      const uniformInfos = programToUniformInfoMap.get(webglState.currentProgram);
       if (!uniformInfos) {
         return;
       }
@@ -3022,11 +3320,11 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           reportFunctionError(ctx, funcName, args, `no version of function '${funcName}' takes ${args.length} arguments`);
           return;
         } else {
-          const {numbers = {}, arrays = {}} = funcInfo;
+          const {numbers = {}, arrays = {}, undef = {}} = funcInfo;
           for (let ndx = 0; ndx < args.length; ++ndx) {
             const arg = args[ndx];
             // check the no arguments are undefined
-            if (arg === undefined) {
+            if (arg === undefined && !undef[ndx]) {
               reportFunctionError(ctx, funcName, args, `argument ${ndx} is undefined`);
               return;
             }
@@ -3051,7 +3349,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
               const isArrayLike = Array.isArray(arg) || isTypedArray(arg);
               if (arraySetting >= 0) {
                 if (!isArrayLike) {
-                  reportFunctionError(ctx, funcName, args, `argument ${ndx} is not am array or typedarray`);
+                  reportFunctionError(ctx, funcName, args, `argument ${ndx} is not an array or typedarray`);
                   return;
                 }
               }
@@ -3102,7 +3400,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
       ctx[funcName] = function(...args) {
         preCheck(ctx, funcName, args);
         checkArgs(ctx, funcName, args);
-        if (sharedState.currentProgram && isDrawFunction(funcName)) {
+        if (webglState.currentProgram && isDrawFunction(funcName)) {
           const msgs = checkAttributesForBufferOverflow(baseContext, funcName, args, getWebGLObjectString, getIndicesForBuffer);
           if (msgs.length) {
             reportFunctionError(ctx, funcName, args, msgs.join('\n'));
@@ -3115,7 +3413,7 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
           glErrorShadow[err] = true;
           const msgs = [glEnumToString(err)];
           if (isDrawFunction(funcName)) {
-            if (sharedState.currentProgram) {
+            if (webglState.currentProgram) {
               msgs.push(...checkFramebufferFeedback(gl, getWebGLObjectString));
             }
           }
