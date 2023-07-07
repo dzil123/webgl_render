@@ -19,7 +19,7 @@ function loadBufferView(gl, bufferView, buffers) {
     let glBuffer = util.nonnull(gl.createBuffer());
     gl.bindBuffer(target, glBuffer);
     gl.bufferData(target, arrayView, gl.STATIC_DRAW);
-    return { arrayView, glBuffer };
+    return { arrayView, glBuffer, target };
 }
 export async function loadGltf(gl, name) {
     let gltf = await util.download("models/", name, (r) => r.json());
@@ -32,6 +32,6 @@ export async function loadGltf(gl, name) {
     let buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
     let bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, buffers));
     let scene = { buffers, bufferViews };
-    return scene;
+    return [gltf, scene];
 }
 //# sourceMappingURL=gltf.js.map
