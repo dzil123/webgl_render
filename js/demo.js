@@ -5,6 +5,7 @@ await util.sleep(0.1);
 function log(m) {
     function k(x, y) {
         let i = x + y * 4;
+        // @ts-ignore
         return m[i].toFixed(4).toString();
     }
     console.log("\n" +
