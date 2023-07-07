@@ -6,7 +6,8 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 import * as util from "./util.js";
 
 export import GL = WebGLRenderingContextStrict;
-export import GL2 = WebGL2RenderingContextStrict;
+export type GL2 = WebGL2RenderingContextStrict &
+  WebGLRenderingContextStrict.Base_OES_element_index_uint; // bug in webgl-strict-types
 
 export function loadGL(): GL2 {
   let canvas = document.getElementById("canvas");

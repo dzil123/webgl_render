@@ -22,7 +22,7 @@ type AccessorType = keyof typeof AccessorTypeEnum;
 interface Accessor {
   bufferView?: number; // -> bufferViews
   byteOffset?: number;
-  componentType: webgl.GL.ArrayType | webgl.GL.GLenum<"FLOAT">;
+  componentType: webgl.GL.ArrayType | webgl.GL.GLenum<"UNSIGNED_INT">;
   count: number;
   type: AccessorType;
 }
