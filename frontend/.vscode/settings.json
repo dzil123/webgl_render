@@ -11,4 +11,5 @@
   "typescript.format.enable": false,
   // "typescript.tsserver.log": "normal",
   "editor.tabSize": 2,
+  "prettier.printWidth": 90,
 }

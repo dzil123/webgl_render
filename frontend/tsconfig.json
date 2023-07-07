@@ -9,6 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "exactOptionalPropertyTypes": true,
     "noUncheckedIndexedAccess": true,
+    "noImplicitAny": true,
     "strictNullChecks": true,
     "outDir": "dist/js",
     "sourceMap": true,

@@ -8,6 +8,7 @@ await util.sleep(0.1);
 function log(m: mat4) {
   function k(x: number, y: number): string {
     let i = x + y * 4;
+    // @ts-ignore
     return m[i].toFixed(4).toString();
   }
   console.log(

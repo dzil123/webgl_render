@@ -21,6 +21,7 @@ type AccessorType = keyof typeof AccessorTypeEnum;
 
 interface Accessor {
   bufferView?: number; // -> bufferViews
+  byteOffset?: number;
   componentType: webgl.GL.ArrayType | webgl.GL.GLenum<"FLOAT">;
   count: number;
   type: AccessorType;
@@ -50,8 +51,8 @@ interface Mesh {
 }
 
 interface Primitive {
-  attributes: { string: number }; // -> accessors
-  indicies?: number; // -> accessors
+  attributes: { [key: string]: number }; // -> accessors
+  indices?: number; // -> accessors
   mode?: webgl.GL.DrawMode;
 }
 
@@ -63,6 +64,7 @@ interface Scene {
 interface SceneBufferViews {
   arrayView: BufferSource;
   glBuffer: WebGLBuffer;
+  target: webgl.GL.BufferTarget;
 }
 
 async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
@@ -94,10 +96,10 @@ function loadBufferView(
   gl.bindBuffer(target, glBuffer);
   gl.bufferData(target, arrayView, gl.STATIC_DRAW);
 
-  return { arrayView, glBuffer };
+  return { arrayView, glBuffer, target };
 }
 
-export async function loadGltf(gl: webgl.GL2, name: string): Promise<Scene> {
+export async function loadGltf(gl: webgl.GL2, name: string): Promise<[Gltf, Scene]> {
   let gltf: Gltf = await util.download("models/", name, (r) => r.json());
   console.dir(gltf);
   if (gltf.asset.version !== "2.0") {
@@ -112,5 +114,5 @@ export async function loadGltf(gl: webgl.GL2, name: string): Promise<Scene> {
 
   let scene = { buffers, bufferViews };
 
-  return scene;
+  return [gltf, scene];
 }
