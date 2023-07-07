@@ -1,7 +1,9 @@
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
+import * as gltf from "./gltf.js";
 // import "./demo.js";
 let gl = webgl.loadGL();
+gltf.loadGltf(gl, "polygon.gltf");
 let vert = await webgl.loadShader(gl, "particle.vert");
 let frag = await webgl.loadShader(gl, "particle.frag");
 // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));

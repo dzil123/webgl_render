@@ -5,7 +5,7 @@ export function frame() {
     return new Promise((resolve) => requestAnimationFrame(resolve));
 }
 export function nonnull(v) {
-    if (v === null) {
+    if (v === undefined || v === null) {
         throw new Error("unexpected null");
     }
     return v;
@@ -23,5 +23,16 @@ export function new_globals() {
         return item[1];
     };
     return get;
+}
+export async function download(subdir, url, callback) {
+    if (!url.startsWith("data:")) {
+        url = subdir + url;
+    }
+    let response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
+    }
+    let data = await callback(response);
+    return data;
 }
 //# sourceMappingURL=util.js.map

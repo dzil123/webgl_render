@@ -10,15 +10,6 @@ export function loadGL() {
     gl = util.nonnull(gl);
     return gl;
 }
-async function downloadShader(name) {
-    let url = `shaders/${name}`;
-    let response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to download shader ${name}: ${response.status} ${response.statusText}`);
-    }
-    let source = await response.text();
-    return source;
-}
 function typeOfShader(gl, name) {
     if (name.endsWith(".vert")) {
         return gl.VERTEX_SHADER;
@@ -31,7 +22,7 @@ function typeOfShader(gl, name) {
     }
 }
 export async function loadShader(gl, name) {
-    let source = await downloadShader(name);
+    let source = await util.download("shaders/", name, (r) => r.text());
     let shader = gl.createShader(typeOfShader(gl, name));
     shader = util.nonnull(shader);
     gl.shaderSource(shader, source);
@@ -39,12 +30,11 @@ export async function loadShader(gl, name) {
     return shader;
 }
 function textureIndex(i) {
-    const GL_TEXTURE0 = 0x84c0;
     if (!(Number.isInteger(i) && 0 <= i && i < 32)) {
         throw new Error(`Texture index ${i} must be 0 <= x < 32`);
     }
     // @ts-ignore
-    return GL_TEXTURE0 + i;
+    return WebGL2RenderingContext.TEXTURE0 + i;
 }
 const globalTextures = util.new_globals();
 // creates a f32 vec4 datatexture and returns a function to upload data to it
@@ -58,7 +48,7 @@ export function texture(gl, program, name, width) {
     else {
         global_storage[0] += 1;
     }
-    let index = global_storage[0];
+    let index = util.nonnull(global_storage[0]);
     let unit = textureIndex(index);
     let uniformLocation = gl.getUniformLocation(program, name);
     if (uniformLocation === null) {
