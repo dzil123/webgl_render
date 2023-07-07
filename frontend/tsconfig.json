@@ -8,6 +8,8 @@
     // "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "strictNullChecks": true,
     "outDir": "dist/js",
     "sourceMap": true,
     "inlineSources": true

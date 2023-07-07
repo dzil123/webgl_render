@@ -6,8 +6,8 @@ export function frame(): Promise<DOMHighResTimeStamp> {
   return new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
-export function nonnull<T>(v: T | null): T {
-  if (v === null) {
+export function nonnull<T>(v: T | null | undefined): T {
+  if (v === undefined || v === null) {
     throw new Error("unexpected null");
   }
   return v;
@@ -31,4 +31,24 @@ export function new_globals<K, V>(): (key: K) => V[] {
   };
 
   return get;
+}
+
+export async function download<T>(
+  subdir: string,
+  url: string,
+  callback: (r: Response) => Promise<T>
+): Promise<T> {
+  if (!url.startsWith("data:")) {
+    url = subdir + url;
+  }
+  let response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(
+      `Failed to download ${url}: ${response.status} ${response.statusText}`
+    );
+  }
+
+  let data = await callback(response);
+
+  return data;
 }

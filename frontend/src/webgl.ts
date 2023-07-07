@@ -5,8 +5,8 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
 
-import GL = WebGLRenderingContextStrict;
-import GL2 = WebGL2RenderingContextStrict;
+export import GL = WebGLRenderingContextStrict;
+export import GL2 = WebGL2RenderingContextStrict;
 
 export function loadGL(): GL2 {
   let canvas = document.getElementById("canvas");
@@ -20,19 +20,6 @@ export function loadGL(): GL2 {
   return gl;
 }
 
-async function downloadShader(name: string): Promise<string> {
-  let url = `shaders/${name}`;
-  let response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download shader ${name}: ${response.status} ${response.statusText}`
-    );
-  }
-
-  let source = await response.text();
-  return source;
-}
-
 function typeOfShader(gl: GL2, name: string): GL.ShaderType {
   if (name.endsWith(".vert")) {
     return gl.VERTEX_SHADER;
@@ -44,7 +31,7 @@ function typeOfShader(gl: GL2, name: string): GL.ShaderType {
 }
 
 export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
-  let source = await downloadShader(name);
+  let source = await util.download("shaders/", name, (r) => r.text());
 
   let shader = gl.createShader(typeOfShader(gl, name));
   shader = util.nonnull(shader);
@@ -56,14 +43,12 @@ export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
 }
 
 function textureIndex(i: number): GL.TextureUnit {
-  const GL_TEXTURE0 = 0x84c0;
-
   if (!(Number.isInteger(i) && 0 <= i && i < 32)) {
     throw new Error(`Texture index ${i} must be 0 <= x < 32`);
   }
 
   // @ts-ignore
-  return GL_TEXTURE0 + i;
+  return WebGL2RenderingContext.TEXTURE0 + i;
 }
 
 const globalTextures = util.new_globals<WebGLProgram, number>();
@@ -83,7 +68,7 @@ export function texture(
   } else {
     global_storage[0] += 1;
   }
-  let index = global_storage[0];
+  let index = util.nonnull(global_storage[0]);
 
   let unit = textureIndex(index);
 

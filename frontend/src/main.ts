@@ -2,9 +2,12 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
+import * as gltf from "./gltf.js";
 // import "./demo.js";
 
 let gl = webgl.loadGL();
+
+gltf.loadGltf(gl, "polygon.gltf");
 
 let vert = await webgl.loadShader(gl, "particle.vert");
 let frag = await webgl.loadShader(gl, "particle.frag");
