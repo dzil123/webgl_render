@@ -81,14 +81,14 @@ while (true) {
 }
 function generate_polygon(count) {
     let delta_angle = (Math.PI * 2) / count;
-    let start_angle = delta_angle * -0.5;
-    let scale = 1.0 / Math.cos(start_angle);
+    let start_angle = (Math.PI + delta_angle) * -0.5;
+    let scale = 1.0 / Math.cos(delta_angle * 0.5);
     let array = new Float32Array(count * 2);
     for (let i = 0; i < count; i++) {
         let angle = start_angle + delta_angle * i;
         console.log((angle * 180) / Math.PI);
-        array[i * 2] = Math.sin(angle) * scale;
-        array[i * 2 + 1] = -Math.cos(angle) * scale;
+        array[i * 2] = Math.cos(angle) * scale;
+        array[i * 2 + 1] = Math.sin(angle) * scale;
     }
     console.log(array);
     let indexArray = new Uint8Array((count - 2) * 3);
