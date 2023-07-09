@@ -2,12 +2,20 @@ import * as webgl from "./webgl.js";
 import * as util from "./util.js";
 
 interface Gltf {
-  asset: { version: "2.0" };
-  buffers?: Buffer[];
-  meshes?: Mesh[];
-  accessors?: Accessor[];
-  bufferViews?: BufferView[];
+  readonly asset: { version: "2.0" };
+  buffers: Buffer[];
+  meshes: Mesh[];
+  accessors: Accessor[];
+  bufferViews: BufferView[];
 }
+
+const GLTF_DEFAULT: Gltf = {
+  asset: { version: "2.0" },
+  buffers: [],
+  meshes: [],
+  accessors: [],
+  bufferViews: [],
+};
 
 const enum AccessorTypeEnum {
   SCALAR,
@@ -99,15 +107,19 @@ function loadBufferView(
   return { arrayView, glBuffer, target };
 }
 
-export async function loadGltf(gl: webgl.GL2, name: string): Promise<[Gltf, Scene]> {
-  let gltf: Gltf = await util.download("models/", name, (r) => r.json());
+async function downloadGltf(name: string): Promise<Gltf> {
+  let gltf: Partial<Gltf> = await util.download("models/", name, (r) => r.json());
   console.dir(gltf);
-  if (gltf.asset.version !== "2.0") {
-    throw { msg: "Unsupported gltf", asset: gltf.asset };
+
+  if (gltf?.asset?.version === "2.0") {
+    return Object.assign(GLTF_DEFAULT, gltf);
   }
 
-  gltf.buffers = gltf.buffers || [];
-  gltf.bufferViews = gltf.bufferViews || [];
+  throw { msg: "Unsupported gltf", asset: gltf.asset };
+}
+
+export async function loadGltf(gl: webgl.GL2, name: string): Promise<[Gltf, Scene]> {
+  let gltf = await downloadGltf(name);
 
   let buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
   let bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, buffers));

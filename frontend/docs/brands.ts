@@ -120,8 +120,6 @@
     let buffer_alpha: SpecialTypes["Alpha"] = doc.buffers[accessor_alpha];
     let value_alpha: number = buffer_alpha.value; // note: number
 
-    let x = Array<keyof SpecialTypes>;
-
     // doesn't compile:
     // let buffer_regular: SpecialTypes["Alpha"] = doc.buffers[doc.accessors["asdf"]]; // expected Buffer, not BufferAlpha
     // let value_beta: number = doc.buffers[doc.accessors["Beta"]].value; // expected boolean, not number
