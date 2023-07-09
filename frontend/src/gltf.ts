@@ -76,13 +76,11 @@ interface Primitive {
 
 interface Scene {
   buffers: ArrayBuffer[];
-  bufferViews: SceneBufferViews[];
-}
-
-interface SceneBufferViews {
-  arrayView: BufferSource;
-  glBuffer: WebGLBuffer;
-  target: webgl.GL.BufferTarget;
+  bufferViews: {
+    arrayView: BufferSource;
+    glBuffer: WebGLBuffer;
+    target: webgl.GL.BufferTarget;
+  }[];
 }
 
 async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
@@ -97,13 +95,13 @@ async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
 function loadBufferView(
   gl: webgl.GL2,
   bufferView: BufferView,
-  buffers: ArrayBuffer[]
-): SceneBufferViews {
+  scene: Pick<Scene, "buffers">
+): Scene["bufferViews"][0] {
   if (bufferView.byteStride !== undefined) {
     throw "byteStride unsupported";
   }
 
-  let array = util.nonnull(buffers[bufferView.buffer]);
+  let array = util.nonnull(scene.buffers[bufferView.buffer]);
   let offset = bufferView.byteOffset || 0;
   let target = util.nonnull(bufferView.target);
 
@@ -131,10 +129,16 @@ async function downloadGltf(name: string): Promise<Gltf> {
 export async function loadGltf(gl: webgl.GL2, name: string): Promise<[Gltf, Scene]> {
   let gltf = await downloadGltf(name);
 
-  let buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
-  let bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, buffers));
+  const [buildBuffers, buildBufferViews] = [
+    async () => ({ buffers: await Promise.all(gltf.buffers.map(downloadBuffer)) }),
+    (scene) => ({
+      ...scene,
+      bufferViews: gltf.bufferViews.map((v) => loadBufferView(gl, v, scene)),
+    }),
+  ] satisfies util.Builder<Scene, ["buffers", "bufferViews"]>;
 
-  let scene = { buffers, bufferViews };
+  let scene1 = await buildBuffers();
+  let scene = buildBufferViews(scene1);
 
   return [gltf, scene];
 }

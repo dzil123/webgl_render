@@ -52,3 +52,19 @@ export async function download<T>(
 
   return data;
 }
+
+type MaybePromise<T> = Promise<T> | T;
+
+export type Builder<
+  T,
+  F extends (keyof T)[],
+  K extends keyof T = never,
+  R extends unknown[] = []
+> = R["length"] extends F["length"]
+  ? R
+  : Builder<
+      T,
+      F,
+      K | F[R["length"]],
+      [...R, (obj: Pick<T, K>, extra: never) => MaybePromise<Pick<T, K | F[R["length"]]>>]
+    >;
