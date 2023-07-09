@@ -15,7 +15,7 @@ export function loadGL(): GL2 {
     throw new Error("Expected element to be a canvas");
   }
 
-  let gl = canvas.getContext("webgl2") as any as GL2;
+  let gl = canvas.getContext("webgl2") as any as GL2 | null;
   gl = util.nonnull(gl);
 
   return gl;

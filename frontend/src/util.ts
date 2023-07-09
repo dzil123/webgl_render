@@ -6,7 +6,7 @@ export function frame(): Promise<DOMHighResTimeStamp> {
   return new Promise((resolve) => requestAnimationFrame(resolve));
 }
 
-export function nonnull<T>(v: T | null | undefined): T {
+export function nonnull<T>(v: T): NonNullable<T> {
   if (v === undefined || v === null) {
     throw new Error("unexpected null");
   }
