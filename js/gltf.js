@@ -1,4 +1,11 @@
 import * as util from "./util.js";
+const GLTF_DEFAULT = {
+    asset: { version: "2.0" },
+    buffers: [],
+    meshes: [],
+    accessors: [],
+    bufferViews: [],
+};
 async function downloadBuffer(buffer) {
     let uri = util.nonnull(buffer.uri);
     let data = await util.download("models/", uri, (r) => r.arrayBuffer());
@@ -21,14 +28,16 @@ function loadBufferView(gl, bufferView, buffers) {
     gl.bufferData(target, arrayView, gl.STATIC_DRAW);
     return { arrayView, glBuffer, target };
 }
-export async function loadGltf(gl, name) {
+async function downloadGltf(name) {
     let gltf = await util.download("models/", name, (r) => r.json());
     console.dir(gltf);
-    if (gltf.asset.version !== "2.0") {
-        throw { msg: "Unsupported gltf", asset: gltf.asset };
+    if (gltf?.asset?.version === "2.0") {
+        return Object.assign(GLTF_DEFAULT, gltf);
     }
-    gltf.buffers = gltf.buffers || [];
-    gltf.bufferViews = gltf.bufferViews || [];
+    throw { msg: "Unsupported gltf", asset: gltf.asset };
+}
+export async function loadGltf(gl, name) {
+    let gltf = await downloadGltf(name);
     let buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
     let bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, buffers));
     let scene = { buffers, bufferViews };
