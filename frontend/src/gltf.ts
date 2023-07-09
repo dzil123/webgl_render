@@ -17,15 +17,30 @@ const GLTF_DEFAULT: Gltf = {
   bufferViews: [],
 };
 
-const enum AccessorTypeEnum {
+enum AccessorTypeEnum {
   SCALAR,
   VEC2,
   VEC3,
+  VEC4,
   MAT2,
   MAT3,
   MAT4,
 }
 type AccessorType = keyof typeof AccessorTypeEnum;
+
+function accessorTypeToNumComponents(t: AccessorType): 1 | 2 | 3 | 4 | 9 | 16 {
+  const LUT: { [K in AccessorTypeEnum]: 1 | 2 | 3 | 4 | 9 | 16 } = {
+    [AccessorTypeEnum.SCALAR]: 1,
+    [AccessorTypeEnum.VEC2]: 2,
+    [AccessorTypeEnum.VEC3]: 3,
+    [AccessorTypeEnum.VEC4]: 4,
+    [AccessorTypeEnum.MAT2]: 4,
+    [AccessorTypeEnum.MAT3]: 9,
+    [AccessorTypeEnum.MAT4]: 16,
+  };
+
+  return LUT[AccessorTypeEnum[t]];
+}
 
 interface Accessor {
   bufferView?: number; // -> bufferViews
@@ -33,13 +48,8 @@ interface Accessor {
   componentType: webgl.GL.ArrayType | webgl.GL.GLenum<"UNSIGNED_INT">;
   count: number;
   type: AccessorType;
+  normalized?: boolean;
 }
-
-// @ts-ignore
-// let x: Accessor = null;
-
-// if (x.type == AccessorType["MAT2"]) {
-// }
 
 interface BufferView {
   buffer: number; // -> buffers
@@ -112,7 +122,7 @@ async function downloadGltf(name: string): Promise<Gltf> {
   console.dir(gltf);
 
   if (gltf?.asset?.version === "2.0") {
-    return Object.assign(GLTF_DEFAULT, gltf);
+    return { ...GLTF_DEFAULT, ...gltf };
   }
 
   throw { msg: "Unsupported gltf", asset: gltf.asset };
