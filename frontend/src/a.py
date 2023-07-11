@@ -93,9 +93,9 @@ def sub1(x, rest):
         return List()
     return sub1(x, rest.poplast()) | List(rest.last() | Pick(x))
 
-#
+# _A
 def list_powerset(lst): # lst: keyof T
-    result = List(Pick()) # result: 
+    result = List(Pick()) # result: Partial<T>
     # for x in lst.x:
     #     result |= sub1(x, result)
     # return result
@@ -103,11 +103,18 @@ def list_powerset(lst): # lst: keyof T
 
 # ApplyFoo
 # Foo = Pick(x) | U
-def sub1(x, rest):
+# _C
+def _sub1(x, rest): # x: keyof T ;  rest: Partial<T>
     if rest.last() is None:
         return List()
     return sub1(x, rest.poplast()) | List(rest.last() | Pick(x))
 
+def sub1(x, rest):
+    ret = _sub1(x, rest)
+    print(f"sub1: ({x}, {rest}) -> {ret}")
+    return ret
+
+# _B
 def sub2(result, lst):
     if lst.last() is None:
         return result

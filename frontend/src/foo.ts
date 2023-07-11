@@ -4,6 +4,7 @@ interface Scene {
   foo: {};
   bar: {};
   baz: {};
+  qux: {};
 }
 
 // oh boy don't do this
@@ -30,9 +31,6 @@ type TuplifyUnion<
 
 // type Partial<T> = never;
 
-type Head<T> = T extends [infer First, ...infer Rest] ? First : never;
-type Tail<T> = T extends [infer First, ...infer Rest] ? Rest : never;
-
 // type Foo__ = Tail<TuplifyUnion<keyof Scene>>;
 
 type PartialScene =
@@ -46,7 +44,9 @@ type PartialScene2 =
   | Pick<Scene, "foo" | "bar">
   | Pick<Scene, "foo" | "bar" | "baz">;
 
-type PowerSet<T, F extends (keyof T)[]> = F["length"] extends 0 ? number : boolean;
+type PowerSet<T, F extends (keyof T)[]> = F["length"] extends 0
+  ? number
+  : boolean;
 // type X = Expand<PowerSet<keyof "">>;
 // type X1 = ExpandRecursively<PowerSet<keyof "">>;
 
@@ -98,22 +98,150 @@ type PopLast<List> = Exclude<List, LastOf<List>>;
 // type K = TuplifyUnion<keyof Scene>;
 type K_ = ExpandRecursively<(keyof Scene)[]>;
 
-type _A<T> = _B<T, {}, TuplifyUnion<keyof T>>;
+type List<T, L extends T[]> = L extends [infer First extends T, ...infer Rest]
+  ? [First, Rest]
+  : never;
 
-type _B<T, R, L> = Head<L> extends never
+// type Head<T, L extends (keyof T)[]> = List<T, L>[0];
+// type Tail<T, L extends (keyof T)[]> = List<T, L>[1];
+
+type LenMinus1<L extends unknown[]> = L extends [L[number], ...infer Rest]
+  ? Rest["length"]
+  : never;
+
+type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & {
+  length: TLength;
+};
+
+// type List<L extends unknown[]> = L extends [
+//   infer First extends L[number],
+//   ...(infer Rest & Tuple<L[number], LenMinus1<L>>)
+// ]
+//   ? // ? { first: First; rest: Rest }
+//     [First, Rest]
+//   : never;
+
+// type Head<T, L extends T[]> = List<T, L>[0];
+// type Tail<T, L extends T[]> = List<T, L>[1];
+
+// type ListA<T, L extends (keyof T)[]> = List<keyof T, L>;
+// type ListB<T, L extends Partial<T>[]> = List<Partial<T>, L>;
+
+// type HeadA<T, L extends (keyof T)[]> = List<L>[0];
+// type TailA<T, L extends (keyof T)[]> = List<L>[1];
+
+// type HeadB<T, L extends Partial<T>[]> = List<L>[0];
+// type TailB<T, L extends Partial<T>[]> = List<L>[1];
+
+// type HeadA<T, L extends (keyof T)[]> = List<keyof T, L>[0];
+// type TailA<T, L extends (keyof T)[]> = List<keyof T, L>[1];
+
+// type HeadB<T, L extends Partial<T>[]> = List<Partial<T>, L>[0];
+// type TailB<T, L extends Partial<T>[]> = List<Partial<T>, L>[1];
+
+type HeadPrime<T extends unknown[]> = ((...args: T) => never) extends (
+  _: infer R,
+  ...args: any
+) => never
   ? R
-  : _B<T, R, Tail<L>> | _C<T, Head<L>, _B<T, R, Tail<L>>>;
+  : never;
 
-type _C<T, X extends keyof T, R> = Head<R> extends never
+type TailPrime<T extends unknown[]> = ((...args: T) => never) extends (
+  _: any,
+  ...args: infer R
+) => never
+  ? R
+  : never;
+
+type Head<T extends unknown[]> = T["length"] extends 0 ? never : HeadPrime<T>;
+type Tail<T extends unknown[]> = T["length"] extends 0 ? never : TailPrime<T>;
+
+type HeadA<T, L extends (keyof T)[]> = Head<L>;
+type TailA<T, L extends (keyof T)[]> = Tail<L>;
+
+type HeadB<T, L extends Partial<T>[]> = Head<L>;
+type TailB<T, L extends Partial<T>[]> = Tail<L>;
+
+type ListToUnion<T extends unknown[]> = T[number];
+
+// type _A<T, K extends (keyof T)[]> = _B<T, {}, K>;
+
+type _B<T, R extends Partial<T>[], L extends (keyof T)[]> = HeadA<
+  T,
+  L
+> extends never
+  ? R
+  : _B<T, R, TailA<T, L>> | _C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>;
+// : [_B<T, R, TailA<T, L>>, ..._C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>];
+
+type _C<T, X extends keyof T, R extends Partial<T>[]> = HeadB<
+  T,
+  R
+> extends never
   ? never
-  : _C<T, X, Tail<R>> | (Tail<R> & Pick<T, X>);
+  : // : _C<T, X, TailB<T, R>> | (ListToUnion<TailB<T, R>> & Pick<T, X>);
+    _C<T, X, TailB<T, R>> | _D<TailB<T, R>, Pick<T, X>>;
 
-type K = Expand<ApplyFoo<"a", 0 | 1 | 2>>;
-type K1 = Expand<Pick<Scene, "foo"> | Pick<Scene, "bar">>;
+type _D<T extends unknown[], X> = T["length"] extends 0
+  ? X
+  : ListToUnion<T> & X;
 
-type K2 = _A<Scene>;
+// : ListToUnion<TailB<T, R>> & Pick<T, X>;
+
+type X = _C<
+  Scene,
+  "foo",
+  [Pick<Scene, "qux">, Pick<Scene, "bar">, Pick<Scene, "baz">]
+>;
+type X_ = Expand<X>;
+// type X1 = Expand<List<number, []>>;
+// type X2 = Expand<Head<[]>>;
+// type X = Expand<LenMinus1<[1]>>;
+// type X = X_<[5, 6, 7, 8]>;
+// type X = ListToUnion<[5, 6, 7, 8]>;
+// type X1 = Pick<Scene, "baz" | "foo">;
+// type X2 = Expand<Pick<Scene, "baz"> | Pick<Scene, "foo">>;
+
+{
+  type foo = Pick<Scene, "foo">;
+  type bar = Pick<Scene, "bar">;
+  type baz = Pick<Scene, "baz">;
+
+  type X =
+    | never
+    | foo
+    | bar
+    | baz
+    | (foo & bar)
+    | (foo & baz)
+    | (bar & baz)
+    | (foo & bar & baz);
+  type X_ = Expand<X>;
+
+  type Y = _D<[bar, baz], foo>;
+  type Y_ = Expand<Y>;
+}
+
+// type X_<L extends unknown[]> = Tuple<L[number], LenMinus1<L>>;
+
+// type X = () [P in keyof Scene]: number }
+
+// type X = keyof {[P in keyof Scene as Pick<Scene, P>]: never};
+
+// type _Foo = Expand<_A<Scene, ["foo", "bar", "baz"]>>;
+// type _Foo = Expand<Head<Scene, ["foo", "bar", "baz"]>>;
+// type _Foo = Expand<Tail<Scene, ["foo", "bar", "baz"]>>;
+// type _Foo = ExpandRecursively<_C<Scene, "foo", ["bar", "baz"]>>;
+
+// type K2 = _A<Scene>;
 
 // type foo = ExpandRecursively<PowerSet<Scene>>;
+
+type Test = Pick<Scene, "foo"> | Pick<Scene, "foo" | "bar">;
+
+type DoesExtend<A, B> = A extends B ? true : false;
+
+type F = DoesExtend<[1], []>;
 
 import { Builder } from "./util.js";
 
@@ -145,5 +273,15 @@ function run() {
   // scene.foo = {};
   scene = { ...scene, bar: {} };
   scene = { ...scene, baz: {} };
-  let scene2: Scene = scene;
+  // let scene2: Scene = scene;
 }
+// {
+//   type Tail<T extends unknown[]> = ((...args: T) => never) extends (
+//     _: any,
+//     ...args: infer R
+//   ) => never
+//     ? R
+//     : never;
+
+//   type X = Tail<[1, 2, 3]>;
+// }
