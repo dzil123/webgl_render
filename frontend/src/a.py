@@ -34,12 +34,12 @@ def gen(n):
             x.x = self.x + other.x
             return x
 
-        def last(self):
+        def last(self): # head
             if len(self.x) == 0:
                 return None
             return self.x[-1]
 
-        def poplast(self):
+        def poplast(self): # tail
             x = self.__class__()
             x.x = self.x[:-1]
             return x

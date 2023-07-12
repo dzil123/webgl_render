@@ -4,7 +4,7 @@ interface Scene {
   foo: {};
   bar: {};
   baz: {};
-  qux: {};
+  // qux: {};
 }
 
 // oh boy don't do this
@@ -31,18 +31,30 @@ type TuplifyUnion<
 
 // type Partial<T> = never;
 
-// type Foo__ = Tail<TuplifyUnion<keyof Scene>>;
+// type Foo__ = TuplifyUnion<keyof Scene>;
 
 type PartialScene =
   | Partial<Scene>
   | (Partial<Scene> & Pick<Scene, "foo">)
   | (Partial<Scene> & Pick<Scene, "foo" | "bar">)
   | (Partial<Scene> & Pick<Scene, "foo" | "bar" | "baz">);
+// | (Partial<Scene> & Pick<Scene, "foo" | "bar" | "baz" | "qux">);
 
 type PartialScene2 =
   | Pick<Scene, "foo">
   | Pick<Scene, "foo" | "bar">
   | Pick<Scene, "foo" | "bar" | "baz">;
+
+type PartialScene3 =
+  | Pick<Scene, "foo">
+  | Pick<Scene, "bar">
+  | Pick<Scene, "baz">
+  | Pick<Scene, "foo" | "bar">
+  | Pick<Scene, "foo" | "baz">
+  | Pick<Scene, "bar" | "baz">
+  | Pick<Scene, "foo" | "bar" | "baz">;
+
+// | Pick<Scene, "foo" | "bar" | "baz" | "qux">;
 
 type PowerSet<T, F extends (keyof T)[]> = F["length"] extends 0
   ? number
@@ -113,6 +125,8 @@ type Tuple<TItem, TLength extends number> = [TItem, ...TItem[]] & {
   length: TLength;
 };
 
+type Sub1<N extends number> = LenMinus1<Tuple<never, N>>;
+
 // type List<L extends unknown[]> = L extends [
 //   infer First extends L[number],
 //   ...(infer Rest & Tuple<L[number], LenMinus1<L>>)
@@ -166,34 +180,94 @@ type ListToUnion<T extends unknown[]> = T[number];
 
 // type _A<T, K extends (keyof T)[]> = _B<T, {}, K>;
 
-type _B<T, R extends Partial<T>[], L extends (keyof T)[]> = HeadA<
-  T,
-  L
-> extends never
-  ? R
-  : _B<T, R, TailA<T, L>> | _C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>;
-// : [_B<T, R, TailA<T, L>>, ..._C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>];
+// type _B<T, R extends Partial<T>[], L extends (keyof T)[]> = HeadA<
+//   T,
+//   L
+// > extends never
+//   ? R
+//   : _B<T, R, TailA<T, L>> | _C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>;
+// // : [_B<T, R, TailA<T, L>>, ..._C<T, HeadA<T, L>, _B<T, R, TailA<T, L>>>];
 
-type _C<T, X extends keyof T, R extends Partial<T>[]> = HeadB<
-  T,
-  R
-> extends never
-  ? never
-  : // : _C<T, X, TailB<T, R>> | (ListToUnion<TailB<T, R>> & Pick<T, X>);
-    _C<T, X, TailB<T, R>> | _D<TailB<T, R>, Pick<T, X>>;
+// type _C<T, X extends keyof T, R extends Partial<T>[]> = HeadB<
+//   T,
+//   R
+// > extends never
+//   ? never
+//   : // : _C<T, X, TailB<T, R>> | (ListToUnion<TailB<T, R>> & Pick<T, X>);
+//     _C<T, X, TailB<T, R>> | _D<TailB<T, R>, Pick<T, X>>;
 
-type _D<T extends unknown[], X> = T["length"] extends 0
-  ? X
-  : ListToUnion<T> & X;
+// type _D<T extends unknown[], X> = T["length"] extends 0
+//   ? X
+//   : ListToUnion<T> & X;
 
 // : ListToUnion<TailB<T, R>> & Pick<T, X>;
 
-type X = _C<
-  Scene,
-  "foo",
-  [Pick<Scene, "qux">, Pick<Scene, "bar">, Pick<Scene, "baz">]
->;
+// type _C<T, X extends keyof T, R extends (keyof T)[]> = R["length"] extends 0
+//   ? [X]
+//   : // : [_D<Tail<R>, X>, ..._C<T, X, Tail<R>>];
+//     // [ListToUnion<Tail<R>> | X, ..._C<T, X, Tail<R>>];
+//     [Head<R> | X, ..._C<T, X, Tail<R>>];
+
+// type _A<T, K extends T[]> = _B<T, [], K>;
+
+// type _B<T, R extends T[], L extends T[]> = L["length"] extends 0
+//   ? R
+//   : [..._B<T, R, Tail<L>>, ..._C<T, Head<L>, _B<T, R, Tail<L>>>];
+// // // : _B<T, R, Tail<L>> | _C<T, Head<L>, _B<T, R, Tail<L>>>;
+
+// type _B<T, L extends (keyof T)[], N extends number[]> = N["length"] extends 0
+//   ? L
+//   : L["length"] extends 0
+//   ? []
+//   : _B<T, Tail<L>, Tail<N>> extends infer _B2 | (keyof T)[]
+//   ? [..._B2]
+//   : [];
+
+type ForEachPick<T, L extends (keyof T)[]> = L["length"] extends 0
+  ? never
+  : Pick<T, Head<L>> | ForEachPick<T, Tail<L>>;
+
+type _A<T, L extends (keyof T)[]> = ForEachPick<T, _B<keyof T, L>>;
+
+type _B<T, L extends T[]> = L["length"] extends 0
+  ? []
+  : _B<T, Tail<L>> extends infer _B2
+  ? _B2 extends T[]
+    ? [..._B2, ..._C<T, Head<L>, _B2>]
+    : []
+  : [];
+
+type _C<T, X extends T, R extends T[]> = R["length"] extends 0
+  ? [X]
+  : [Head<R> | X, ..._C<T, X, Tail<R>>];
+
+// type _D<T extends unknown[], X> = T["length"] extends 0
+//   ? X
+//   : ListToUnion<T> | X;
+
+// type X = _C<any, "foo", ["qux", "bar", "baz"]>;
+// type X0 = [];
+// type X1 = [...X0, ..._C<any, "foo", []>];
+// type X2 = [...X1, ..._C<any, "bar", X1>];
+// type X3 = [...X2, ..._C<any, "baz", X2>];
+// type X = X3;
+// type X = _B<any, ["foo", "bar", "baz"], [1, 2, 3, 4]>;
+// type X = _B<any, [1, 2]>;
+// type X = _A<any, [1, 2]>;
+type X = _A<Scene, ["foo", "bar", "baz"]>;
 type X_ = Expand<X>;
+
+{
+  function useScene(_: Scene) {}
+
+  let scene: PartialScene3 = { foo: {} } as const;
+  scene = { ...scene, bar: {} } as const;
+  scene = { ...scene, baz: {} } as const;
+  useScene(scene);
+}
+
+// type X = _D<["foo", "bar"], "baz">;
+// type X = ListToUnion<[]>;
 // type X1 = Expand<List<number, []>>;
 // type X2 = Expand<Head<[]>>;
 // type X = Expand<LenMinus1<[1]>>;
@@ -202,25 +276,25 @@ type X_ = Expand<X>;
 // type X1 = Pick<Scene, "baz" | "foo">;
 // type X2 = Expand<Pick<Scene, "baz"> | Pick<Scene, "foo">>;
 
-{
-  type foo = Pick<Scene, "foo">;
-  type bar = Pick<Scene, "bar">;
-  type baz = Pick<Scene, "baz">;
+// {
+//   type foo = Pick<Scene, "foo">;
+//   type bar = Pick<Scene, "bar">;
+//   type baz = Pick<Scene, "baz">;
 
-  type X =
-    | never
-    | foo
-    | bar
-    | baz
-    | (foo & bar)
-    | (foo & baz)
-    | (bar & baz)
-    | (foo & bar & baz);
-  type X_ = Expand<X>;
+//   type X =
+//     | never
+//     | foo
+//     | bar
+//     | baz
+//     | (foo & bar)
+//     | (foo & baz)
+//     | (bar & baz)
+//     | (foo & bar & baz);
+//   type X_ = Expand<X>;
 
-  type Y = _D<[bar, baz], foo>;
-  type Y_ = Expand<Y>;
-}
+//   type Y = _D<[bar, baz], foo>;
+//   type Y_ = Expand<Y>;
+// }
 
 // type X_<L extends unknown[]> = Tuple<L[number], LenMinus1<L>>;
 
