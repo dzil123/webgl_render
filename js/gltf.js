@@ -60,15 +60,12 @@ async function downloadGltf(name) {
 }
 export async function loadGltf(gl, name) {
     let gltf = await downloadGltf(name);
-    const [buildBuffers, buildBufferViews] = [
-        async () => ({ buffers: await Promise.all(gltf.buffers.map(downloadBuffer)) }),
-        (scene) => ({
-            ...scene,
-            bufferViews: gltf.bufferViews.map((v) => loadBufferView(gl, v, scene)),
-        }),
-    ];
-    let scene1 = await buildBuffers();
-    let scene = buildBufferViews(scene1);
+    let scene;
+    scene = { buffers: await Promise.all(gltf.buffers.map(downloadBuffer)) };
+    scene = {
+        ...scene,
+        bufferViews: gltf.bufferViews.map((v) => loadBufferView(gl, v, scene)),
+    };
     return [gltf, scene];
 }
 //# sourceMappingURL=gltf.js.map
