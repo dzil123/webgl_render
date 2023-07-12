@@ -28,8 +28,8 @@ enum AccessorTypeEnum {
 }
 type AccessorType = keyof typeof AccessorTypeEnum;
 
-function accessorTypeToNumComponents(t: AccessorType): 1 | 2 | 3 | 4 | 9 | 16 {
-  const LUT: { [K in AccessorTypeEnum]: 1 | 2 | 3 | 4 | 9 | 16 } = {
+function accessorTypeToNumComponents(t: AccessorType) {
+  const LUT = {
     [AccessorTypeEnum.SCALAR]: 1,
     [AccessorTypeEnum.VEC2]: 2,
     [AccessorTypeEnum.VEC3]: 3,
@@ -37,7 +37,7 @@ function accessorTypeToNumComponents(t: AccessorType): 1 | 2 | 3 | 4 | 9 | 16 {
     [AccessorTypeEnum.MAT2]: 4,
     [AccessorTypeEnum.MAT3]: 9,
     [AccessorTypeEnum.MAT4]: 16,
-  };
+  } as const;
 
   return LUT[AccessorTypeEnum[t]];
 }
