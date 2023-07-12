@@ -4,7 +4,6 @@ interface Scene {
   foo: {};
   bar: {};
   baz: {};
-  // qux: {};
 }
 
 // oh boy don't do this
@@ -254,8 +253,23 @@ type _C<T, X extends T, R extends T[]> = R["length"] extends 0
 // type X = _B<any, ["foo", "bar", "baz"], [1, 2, 3, 4]>;
 // type X = _B<any, [1, 2]>;
 // type X = _A<any, [1, 2]>;
-type X = _A<Scene, ["foo", "bar", "baz"]>;
+// type X = _A<Scene, ["foo", "bar", "baz"]>;
+type X = Builder2<Scene, ["foo", "bar", "baz"]>;
+// type X = _C2<Scene, ["foo", "bar", "baz"]>;
 type X_ = Expand<X>;
+
+type Builder2<T, L extends (keyof T)[]> = L["length"] extends 0
+  ? never
+  : Builder2<T, Tail<L>> | _C2<T, L>;
+
+type _C2<T, L extends (keyof T)[]> = L["length"] extends 1
+  ? Pick<T, Head<L>>
+  : Pick<T, Head<L>> & _C2<T, Tail<L>>;
+
+type _C3<T, L extends (keyof T)[]> = Pick<T, L[number]>;
+
+type AAA = Expand<_C2<Scene, ["foo", "bar"]>>;
+type AAA2 = Expand<_C2<Scene, ["foo", "bar"]>>;
 
 {
   function useScene(_: Scene) {}
