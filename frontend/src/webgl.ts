@@ -32,7 +32,9 @@ function typeOfShader(gl: GL2, name: string): GL.ShaderType {
 }
 
 export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
+  let include = await util.download("shaders/", "include.glsl", (r) => r.text());
   let source = await util.download("shaders/", name, (r) => r.text());
+  source = include + source;
 
   let shader = gl.createShader(typeOfShader(gl, name));
   shader = util.nonnull(shader);

@@ -1,11 +1,11 @@
-import * as webgl from "./webgl.js";
+import { GL, GL2 } from "./webgl.js";
 import * as util from "./util.js";
 
 interface Gltf {
   readonly asset: { version: "2.0" };
   buffers: Buffer[];
   meshes: Mesh[];
-  accessors: Accessor[];
+  accessors: Accessor[] & SpecialAccessor;
   bufferViews: BufferView[];
 }
 
@@ -45,7 +45,7 @@ function accessorTypeToNumComponents(t: AccessorType) {
 interface Accessor {
   bufferView?: number; // -> bufferViews
   byteOffset?: number;
-  componentType: webgl.GL.ArrayType | webgl.GL.GLenum<"UNSIGNED_INT">;
+  componentType: GL.ArrayType | GL.GLenum<"UNSIGNED_INT">;
   count: number;
   type: AccessorType;
   normalized?: boolean;
@@ -56,7 +56,7 @@ interface BufferView {
   byteOffset?: number;
   byteLength: number;
   byteStride?: number;
-  target?: webgl.GL.BufferTarget;
+  target?: GL.BufferTarget;
 }
 
 interface Buffer {
@@ -69,17 +69,37 @@ interface Mesh {
 }
 
 interface Primitive {
-  attributes: { [key: string]: number }; // -> accessors
-  indices?: number; // -> accessors
-  mode?: webgl.GL.DrawMode;
+  attributes: { [key: string]: number } & SpecialAttribute; // -> accessors
+  indices?: Indices; // -> accessors
+  mode?: GL.DrawMode;
 }
+
+type Brand<S extends string> = number & { __brand: S };
+
+type SpecialTypes = {
+  POSITION: { componentType: GL.GLenum<"FLOAT">; type: "VEC3" };
+};
+
+type Indices = Brand<"Indices">;
+
+type SpecialAccessor = { [K in keyof SpecialTypes as Brand<K>]: SpecialTypes[K] } & {
+  [x: Indices]: {
+    componentType:
+      | GL.GLenum<"UNSIGNED_BYTE">
+      | GL.GLenum<"UNSIGNED_SHORT">
+      | GL.GLenum<"UNSIGNED_INT">;
+    type: "SCALAR";
+  };
+};
+
+type SpecialAttribute = { [K in keyof SpecialTypes]: Brand<K> };
 
 interface Scene {
   buffers: ArrayBuffer[];
   bufferViews: {
     arrayView: BufferSource;
     glBuffer: WebGLBuffer;
-    target: webgl.GL.BufferTarget;
+    target: GL.BufferTarget;
   }[];
 }
 
@@ -93,7 +113,7 @@ async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
 }
 
 function loadBufferView(
-  gl: webgl.GL2,
+  gl: GL2,
   bufferView: BufferView,
   scene: Pick<Scene, "buffers">
 ): Scene["bufferViews"][0] {
@@ -126,7 +146,7 @@ async function downloadGltf(name: string): Promise<Gltf> {
   throw { msg: "Unsupported gltf", asset: gltf.asset };
 }
 
-export async function loadGltf(gl: webgl.GL2, name: string): Promise<[Gltf, Scene]> {
+export async function loadGltf(gl: GL2, name: string): Promise<[Gltf, Scene]> {
   let gltf = await downloadGltf(name);
 
   let scene: util.Builder<Scene, ["buffers", "bufferViews"]>;

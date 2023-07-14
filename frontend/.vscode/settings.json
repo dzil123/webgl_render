@@ -3,7 +3,8 @@
   "files.insertFinalNewline": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[glsl]": {
-    "editor.defaultFormatter": "mjohns.clang-format"
+    "editor.defaultFormatter": "mjohns.clang-format",
+    "editor.tabSize": 4,
   },
   "html.format.enable": false,
   "fiveServer.navigate": false,

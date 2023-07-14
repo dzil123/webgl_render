@@ -67,7 +67,13 @@ let position_accessor = util.nonnull(gltfDoc.accessors?.[position_index]);
 let indices_accessor = util.nonnull(gltfDoc.accessors?.[indices_index]); // narrow indices interface - must be unsigned
 
 console.assert(position_accessor.type == "VEC3");
+console.assert(position_accessor.componentType == gl.FLOAT);
 console.assert(indices_accessor.type == "SCALAR");
+console.assert(
+  [gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT, gl.UNSIGNED_INT].includes(
+    indices_accessor.componentType
+  )
+);
 
 let position_bufferview = scene.bufferViews[util.nonnull(position_accessor.bufferView)];
 let indices_bufferview = scene.bufferViews[util.nonnull(indices_accessor.bufferView)];
@@ -101,7 +107,7 @@ while (true) {
   gl.drawElements(
     gl.TRIANGLES,
     indices_accessor.count,
-    <any>indices_accessor.componentType, // since this is an indices_accessor, it must be unsigned integer
+    <any>indices_accessor.componentType, // there is no reason for this to fail typecheck
     0
   );
 }

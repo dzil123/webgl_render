@@ -5,6 +5,7 @@
     "dev": "npm run ensure_install && (npm run clean ; npm run tsc_watch & npm run server_watch)",
     "ensure_install": "[ -d node_modules ] || (echo 'run npm install' ; exit 1)",
     "server_watch": "npx five-server",
+    "start": "npm run dev",
     "tsc_watch": "npx tsc --watch"
   },
   "dependencies": {
