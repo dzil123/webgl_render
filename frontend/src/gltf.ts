@@ -42,6 +42,22 @@ function accessorTypeToNumComponents(t: AccessorType) {
   return LUT[AccessorTypeEnum[t]];
 }
 
+function componentTypeToByteSize(
+  t: GL.ArrayType | GL.GLenum<"INT"> | GL.GLenum<"UNSIGNED_INT">
+): number {
+  const LUT = {
+    5120: 1, // BYTE
+    5121: 1, // UNSIGNED_BYTE
+    5122: 2, // SHORT
+    5123: 2, // UNSIGNED_SHORT
+    5124: 4, // INT
+    5125: 4, // UNSIGNED_INT
+    5126: 4, // FLOAT
+  } as any;
+
+  return LUT[t];
+}
+
 interface Accessor {
   bufferView?: number; // -> bufferViews
   byteOffset?: number;
@@ -81,18 +97,19 @@ type SpecialTypes = {
 };
 
 type Indices = Brand<"Indices">;
+type IndicesComponentType =
+  | GL.GLenum<"UNSIGNED_BYTE">
+  | GL.GLenum<"UNSIGNED_SHORT">
+  | GL.GLenum<"UNSIGNED_INT">;
 
 type SpecialAccessor = { [K in keyof SpecialTypes as Brand<K>]: SpecialTypes[K] } & {
   [x: Indices]: {
-    componentType:
-      | GL.GLenum<"UNSIGNED_BYTE">
-      | GL.GLenum<"UNSIGNED_SHORT">
-      | GL.GLenum<"UNSIGNED_INT">;
+    componentType: IndicesComponentType;
     type: "SCALAR";
   };
 };
 
-type SpecialAttribute = { [K in keyof SpecialTypes]: Brand<K> };
+type SpecialAttribute = { [K in keyof SpecialTypes]?: Brand<K> };
 
 interface Scene {
   buffers: ArrayBuffer[];
@@ -100,6 +117,9 @@ interface Scene {
     arrayView: BufferSource;
     glBuffer: WebGLBuffer;
     target: GL.BufferTarget;
+  }[];
+  meshes: {
+    primitives: RenderMode[];
   }[];
 }
 
@@ -123,7 +143,7 @@ function loadBufferView(
 
   let array = util.nonnull(scene.buffers[bufferView.buffer]);
   let offset = bufferView.byteOffset || 0;
-  let target = util.nonnull(bufferView.target);
+  let target = util.nonnull(bufferView.target); // TODO: lift restriction?
 
   // TODO: is it ok to use Uint8 regardless of AccessorType?
   let arrayView = new Uint8Array(array, offset, bufferView.byteLength);
@@ -131,8 +151,164 @@ function loadBufferView(
   let glBuffer = util.nonnull(gl.createBuffer());
   gl.bindBuffer(target, glBuffer);
   gl.bufferData(target, arrayView, gl.STATIC_DRAW);
+  gl.bindBuffer(target, null);
 
   return { arrayView, glBuffer, target };
+}
+
+interface RenderSkip {
+  skipRender: true;
+}
+
+interface RenderCommon {
+  drawMode: GL.DrawMode;
+  vao: WebGLVertexArrayObject;
+}
+
+interface RenderArray extends RenderCommon {
+  drawArrayCount: number;
+}
+
+interface RenderElements extends RenderCommon {
+  drawElementsCount: number;
+  byteOffset: number;
+  componentType: IndicesComponentType;
+}
+
+type RenderMode = RenderSkip | RenderArray | RenderElements;
+
+function loadPrimitive(
+  gl: GL2,
+  gltf: Gltf,
+  primitive: Primitive,
+  scene: Pick<Scene, "buffers" | "bufferViews">
+): RenderMode {
+  let program = util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
+
+  let vao = util.nonnull(gl.createVertexArray());
+  gl.bindVertexArray(vao);
+
+  let renderMode: RenderMode = { skipRender: true };
+  let renderShared: RenderCommon = {
+    drawMode: primitive.mode ?? gl.TRIANGLES,
+    vao,
+  };
+
+  attributesBlock: {
+    positionBlock: {
+      const vertexPosition = gl.getAttribLocation(program, "pos");
+
+      let accessorIndex = primitive.attributes["POSITION"];
+      if (accessorIndex === undefined) {
+        renderMode = { skipRender: true };
+        break attributesBlock;
+      }
+
+      let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+      console.assert(accessor.type === "VEC3");
+      console.assert(accessor.componentType === gl.FLOAT);
+      // accessor.normalized known false
+
+      let bufferViewIndex = accessor.bufferView;
+      if (bufferViewIndex === undefined) {
+        gl.disableVertexAttribArray(vertexPosition);
+        gl.vertexAttrib3f(vertexPosition, 0, 0, 0);
+        break positionBlock;
+      }
+      let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+      let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+      console.assert(bufferView.target === gl.ARRAY_BUFFER);
+
+      gl.bindBuffer(bufferView.target, bufferView.glBuffer);
+      gl.enableVertexAttribArray(vertexPosition);
+      gl.vertexAttribPointer(
+        vertexPosition,
+        accessorTypeToNumComponents(accessor.type) as any,
+        accessor.componentType,
+        accessor.normalized ?? false,
+        gltfBufferView.byteStride ?? 0,
+        accessor.byteOffset ?? 0
+      );
+      gl.bindBuffer(bufferView.target, null);
+
+      renderMode = {
+        ...renderShared,
+        drawArrayCount: accessor.count,
+      };
+    }
+
+    indicesBlock: {
+      let accessorIndex = primitive.indices;
+      if (accessorIndex === undefined) {
+        break indicesBlock;
+      }
+
+      let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+      console.assert(accessor.type === "SCALAR");
+      console.assert(
+        [gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT, gl.UNSIGNED_INT].includes(
+          accessor.componentType
+        )
+      );
+
+      let bufferViewIndex = accessor.bufferView;
+      if (bufferViewIndex === undefined) {
+        throw "Meaningless";
+      }
+      let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+      let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+      console.assert(bufferView.target === gl.ELEMENT_ARRAY_BUFFER);
+      console.assert(gltfBufferView.byteStride === undefined);
+
+      gl.bindBuffer(bufferView.target, bufferView.glBuffer);
+
+      let offset = 0;
+      if (accessor.byteOffset !== undefined) {
+        offset = accessor.byteOffset / componentTypeToByteSize(accessor.componentType);
+        console.assert(Number.isInteger(offset));
+      }
+
+      renderMode = {
+        ...renderShared,
+        drawElementsCount: accessor.count,
+        byteOffset: offset,
+        componentType: accessor.componentType,
+      };
+    }
+  }
+
+  gl.bindVertexArray(null);
+
+  if ("skipRender" in renderMode) {
+    renderMode satisfies RenderSkip;
+    gl.deleteVertexArray(vao);
+  }
+
+  return renderMode;
+}
+
+export function draw(gl: GL2, renderMode: RenderMode) {
+  if ("skipRender" in renderMode) {
+    renderMode satisfies RenderSkip;
+    return;
+  }
+
+  gl.bindVertexArray(renderMode.vao);
+
+  if ("drawArrayCount" in renderMode) {
+    renderMode satisfies RenderArray;
+    gl.drawArrays(renderMode.drawMode, 0, renderMode.drawArrayCount);
+  } else {
+    renderMode satisfies RenderElements;
+    gl.drawElements(
+      renderMode.drawMode,
+      renderMode.drawElementsCount,
+      renderMode.componentType as any, // overloads are broken
+      renderMode.byteOffset
+    );
+  }
+
+  gl.bindVertexArray(null);
 }
 
 async function downloadGltf(name: string): Promise<Gltf> {
@@ -149,12 +325,15 @@ async function downloadGltf(name: string): Promise<Gltf> {
 export async function loadGltf(gl: GL2, name: string): Promise<[Gltf, Scene]> {
   let gltf = await downloadGltf(name);
 
-  let scene: util.Builder<Scene, ["buffers", "bufferViews"]>;
-  scene = { buffers: await Promise.all(gltf.buffers.map(downloadBuffer)) };
-  scene = {
-    ...scene,
-    bufferViews: gltf.bufferViews.map((v) => loadBufferView(gl, v, scene)),
-  };
+  let scene: Partial<Scene> = {};
 
-  return [gltf, scene];
+  scene.buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
+
+  scene.bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, scene as any));
+
+  scene.meshes = gltf.meshes.map((mesh) => ({
+    primitives: mesh.primitives.map((v) => loadPrimitive(gl, gltf, v, scene as any)),
+  }));
+
+  return [gltf, scene as Scene];
 }
