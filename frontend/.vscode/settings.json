@@ -3,7 +3,8 @@
   "files.insertFinalNewline": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[glsl]": {
-    "editor.defaultFormatter": "mjohns.clang-format",
+    "editor.defaultFormatter": "raczzalan.webgl-glsl-editor",
+    // "editor.defaultFormatter": "mjohns.clang-format",
     "editor.tabSize": 4,
   },
   "html.format.enable": false,
@@ -13,4 +14,5 @@
   // "typescript.tsserver.log": "normal",
   "editor.tabSize": 2,
   "prettier.printWidth": 90,
+  "webgl-glsl-editor.format.placeSpaceAfterKeywords": true,
 }

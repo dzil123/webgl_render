@@ -9,6 +9,10 @@ export import GL = WebGLRenderingContextStrict;
 export type GL2 = WebGL2RenderingContextStrict &
   WebGLRenderingContextStrict.Base_OES_element_index_uint; // bug in webgl-strict-types
 
+export enum Layout {
+  Position = 0,
+}
+
 export function loadGL(): GL2 {
   let canvas = document.getElementById("canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
@@ -31,6 +35,7 @@ function typeOfShader(gl: GL2, name: string): GL.ShaderType {
   }
 }
 
+// input.replaceAll(/^\s*#include\s+"([\w.-_]*)"/mg, (_, name) => name.toUpperCase())
 export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
   let include = await util.download("shaders/", "include.glsl", (r) => r.text());
   let source = await util.download("shaders/", name, (r) => r.text());

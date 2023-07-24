@@ -1,6 +1,8 @@
 {
   "recommendations": [
     "esbenp.prettier-vscode",
-    "ms-vscode.vscode-typescript-next"
+    "ms-vscode.vscode-typescript-next",
+    "raczzalan.webgl-glsl-editor",
+    "mjohns.clang-format",
   ]
 }
