@@ -1,6 +1,10 @@
 /// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
 import "../third-party/webgl-lint.js";
 import * as util from "./util.js";
+export var Layout;
+(function (Layout) {
+    Layout[Layout["Position"] = 0] = "Position";
+})(Layout || (Layout = {}));
 export function loadGL() {
     let canvas = document.getElementById("canvas");
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -21,6 +25,7 @@ function typeOfShader(gl, name) {
         throw new Error(`Invalid shader name: ${name}`);
     }
 }
+// input.replaceAll(/^\s*#include\s+"([\w.-_]*)"/mg, (_, name) => name.toUpperCase())
 export async function loadShader(gl, name) {
     let include = await util.download("shaders/", "include.glsl", (r) => r.text());
     let source = await util.download("shaders/", name, (r) => r.text());
