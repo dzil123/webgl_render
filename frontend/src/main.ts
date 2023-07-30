@@ -7,8 +7,8 @@ import * as gltf from "./gltf.js";
 
 let gl = webgl.loadGL();
 
-let vert = await webgl.loadShader(gl, "particle.vert");
-let frag = await webgl.loadShader(gl, "particle.frag");
+let vert = await webgl.loadShader(gl, "3d.vert");
+let frag = await webgl.loadShader(gl, "3d.frag");
 
 // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
 // console.log(ext.getTranslatedShaderSource(vert));
@@ -27,6 +27,13 @@ gl.useProgram(program);
 let [gltfDoc, scene] = await gltf.loadGltf(gl, "polygon.gltf");
 
 let render = scene.meshes[0]!.primitives[0]!;
+
+if ("locationModelView" in render) {
+  const identity = mat4.create();
+  mat4.identity(identity);
+  gl.uniformMatrix4fv(render.locationModelView, false, identity);
+  gl.uniformMatrix4fv(render.locationProjection, false, identity);
+}
 
 // framebuffer vs renderbuffer
 

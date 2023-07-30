@@ -1,5 +1,6 @@
-import { GL, GL2 } from "./webgl.js";
+import { GL, GL2, Layout } from "./webgl.js";
 import * as util from "./util.js";
+import { mat4, vec3, vec4, glMatrix } from "../third-party/gl-matrix/index.js";
 
 interface Gltf {
   readonly asset: { version: "2.0" };
@@ -163,6 +164,8 @@ interface RenderSkip {
 interface RenderCommon {
   drawMode: GL.DrawMode;
   vao: WebGLVertexArrayObject;
+  locationModelView: WebGLUniformLocation;
+  locationProjection: WebGLUniformLocation;
 }
 
 interface RenderArray extends RenderCommon {
@@ -192,11 +195,13 @@ function loadPrimitive(
   let renderShared: RenderCommon = {
     drawMode: primitive.mode ?? gl.TRIANGLES,
     vao,
+    locationModelView: util.nonnull(gl.getUniformLocation(program, "modelview_mat")),
+    locationProjection: util.nonnull(gl.getUniformLocation(program, "projection_mat")),
   };
 
   attributesBlock: {
     positionBlock: {
-      const vertexPosition = gl.getAttribLocation(program, "pos");
+      const vertexPosition = Layout.Position;
 
       let accessorIndex = primitive.attributes["POSITION"];
       if (accessorIndex === undefined) {
