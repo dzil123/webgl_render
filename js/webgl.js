@@ -1,10 +1,10 @@
 /// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
 import "../third-party/webgl-lint.js";
 import * as util from "./util.js";
-export var Layout;
-(function (Layout) {
-    Layout[Layout["Position"] = 0] = "Position";
-})(Layout || (Layout = {}));
+export var VertexAttributeLayout;
+(function (VertexAttributeLayout) {
+    VertexAttributeLayout[VertexAttributeLayout["Position"] = 0] = "Position";
+})(VertexAttributeLayout || (VertexAttributeLayout = {}));
 export function loadGL() {
     let canvas = document.getElementById("canvas");
     if (!(canvas instanceof HTMLCanvasElement)) {
@@ -35,6 +35,22 @@ export async function loadShader(gl, name) {
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
     return shader;
+}
+export async function loadProgram(gl, shaders, uniformNames) {
+    let glProgram = util.nonnull(gl.createProgram());
+    await Promise.all(shaders.map(async (name) => {
+        let shader = await loadShader(gl, name);
+        gl.attachShader(glProgram, shader);
+        // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
+        // console.log(ext.getTranslatedShaderSource(shader));
+        gl.deleteShader(shader);
+    }));
+    gl.linkProgram(glProgram);
+    let uniforms = {};
+    uniformNames.forEach((name) => {
+        uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
+    });
+    return { glProgram, uniforms: uniforms };
 }
 function textureIndex(i) {
     if (!(Number.isInteger(i) && 0 <= i && i < 32)) {

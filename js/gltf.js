@@ -1,3 +1,4 @@
+import { VertexAttributeLayout } from "./webgl.js";
 import * as util from "./util.js";
 const GLTF_DEFAULT = {
     asset: { version: "2.0" },
@@ -74,7 +75,7 @@ function loadPrimitive(gl, gltf, primitive, scene) {
     };
     attributesBlock: {
         positionBlock: {
-            const vertexPosition = gl.getAttribLocation(program, "pos");
+            const vertexPosition = VertexAttributeLayout.Position;
             let accessorIndex = primitive.attributes["POSITION"];
             if (accessorIndex === undefined) {
                 renderMode = { skipRender: true };
