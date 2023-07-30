@@ -3,37 +3,48 @@ import { mat4 } from "../third-party/gl-matrix/index.js";
 import * as util from "./util.js";
 import * as webgl from "./webgl.js";
 import * as gltf from "./gltf.js";
+import * as websocket from "./websocket.js";
 // import "./demo.js";
+
+const modelMat = mat4.create();
+const viewMat = mat4.create();
+const modelViewMat = mat4.create(); // tmp
+const projectionMat = mat4.create();
+
+function message_handler(data: { [name: string]: any }) {
+  mat4.invert(viewMat, data["mat4"]);
+}
 
 let gl = webgl.loadGL();
 
-let vert = await webgl.loadShader(gl, "3d.vert");
-let frag = await webgl.loadShader(gl, "3d.frag");
+let program = await webgl.loadProgram(
+  gl,
+  ["3d.vert", "3d.frag"],
+  ["modelview_mat", "projection_mat"]
+);
 
-// let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
-// console.log(ext.getTranslatedShaderSource(vert));
-// console.log(ext.getTranslatedShaderSource(frag));
-
-let program = util.nonnull(gl.createProgram());
-gl.attachShader(program, vert);
-gl.attachShader(program, frag);
-gl.linkProgram(program);
+program.uniforms.modelview_mat;
 
 let aspect = gl.canvas.width / gl.canvas.height;
 
 gl.clearColor(0.5, 0.5, 0.5, 1.0);
-gl.useProgram(program);
+gl.useProgram(program.glProgram);
 
-let [gltfDoc, scene] = await gltf.loadGltf(gl, "polygon.gltf");
+gl.enable(gl.DEPTH_TEST);
+
+// const modelName = "polygon.gltf";
+const modelName = "suzanne.gltf";
+let [gltfDoc, scene] = await gltf.loadGltf(gl, modelName);
 
 let render = scene.meshes[0]!.primitives[0]!;
 
-if ("locationModelView" in render) {
-  const identity = mat4.create();
-  mat4.identity(identity);
-  gl.uniformMatrix4fv(render.locationModelView, false, identity);
-  gl.uniformMatrix4fv(render.locationProjection, false, identity);
-}
+const defaultViewMat = [
+  0.760406, 0, -0.649448, 0, -0.039648, 0.998135, -0.046421, 0, 0.648236, 0.061048,
+  0.758988, 0, 3.823527, 0.299516, 7.624601, 1,
+] as const;
+mat4.invert(viewMat, defaultViewMat);
+
+let ws_promise = websocket.createWS(message_handler);
 
 // framebuffer vs renderbuffer
 
@@ -67,8 +78,14 @@ while (true) {
 
   let fov = 70.0;
   let aspect = gl.canvas.width / gl.canvas.height;
+  mat4.perspective(projectionMat, fov, aspect, 0.01, 100.0);
 
-  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+  mat4.mul(modelViewMat, modelMat, viewMat);
+
+  gl.uniformMatrix4fv(program.uniforms.modelview_mat, false, modelViewMat);
+  gl.uniformMatrix4fv(program.uniforms.projection_mat, false, projectionMat);
 
   gltf.draw(gl, render);
 }

@@ -9,8 +9,13 @@ export import GL = WebGLRenderingContextStrict;
 export type GL2 = WebGL2RenderingContextStrict &
   WebGLRenderingContextStrict.Base_OES_element_index_uint; // bug in webgl-strict-types
 
-export enum Layout {
+export enum VertexAttributeLayout {
   Position = 0,
+}
+
+export interface Program<K extends keyof any> {
+  glProgram: WebGLProgram;
+  uniforms: Record<K, WebGLUniformLocation>;
 }
 
 export function loadGL(): GL2 {
@@ -48,6 +53,35 @@ export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
   gl.compileShader(shader);
 
   return shader;
+}
+
+export async function loadProgram<K extends string>(
+  gl: GL2,
+  shaders: string[],
+  uniformNames: K[]
+): Promise<Program<K>> {
+  let glProgram = util.nonnull(gl.createProgram());
+
+  await Promise.all(
+    shaders.map(async (name) => {
+      let shader = await loadShader(gl, name);
+      gl.attachShader(glProgram, shader);
+
+      // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
+      // console.log(ext.getTranslatedShaderSource(shader));
+
+      gl.deleteShader(shader);
+    })
+  );
+
+  gl.linkProgram(glProgram);
+
+  let uniforms: Partial<Record<K, WebGLUniformLocation>> = {};
+  uniformNames.forEach((name) => {
+    uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
+  });
+
+  return { glProgram, uniforms: uniforms as never };
 }
 
 function textureIndex(i: number): GL.TextureUnit {
