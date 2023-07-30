@@ -34,10 +34,10 @@ export var max_speed = Vector3(1.0, 1.0, 1.0)
 export var local = true
 
 # Input Actions
-export var rotate_left_action = ""
-export var rotate_right_action = ""
-export var rotate_up_action = ""
-export var rotate_down_action = ""
+export var rotate_left_action = "ignore"
+export var rotate_right_action = "ignore"
+export var rotate_up_action = "ignore"
+export var rotate_down_action = "ignore"
 export var forward_action = "ui_up"
 export var backward_action = "ui_down"
 export var left_action = "ui_left"
