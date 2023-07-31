@@ -18,6 +18,10 @@ let aspect = gl.canvas.width / gl.canvas.height;
 gl.clearColor(0.5, 0.5, 0.5, 1.0);
 gl.useProgram(program.glProgram);
 gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.BLEND);
+// premultiplied alpha
+gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
+gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 // const modelName = "polygon.gltf";
 const modelName = "suzanne.gltf";
 let [gltfDoc, scene] = await gltf.loadGltf(gl, modelName);
@@ -36,6 +40,7 @@ let then_then = 0;
 let counter = 0;
 const avg_len = 60;
 while (true) {
+    await util.sleep(0.03);
     let now = (await util.frame()) / 1000;
     webgl.resize(gl);
     let delta = now - then;
@@ -54,7 +59,7 @@ while (true) {
     }
     let fov = 70.0;
     let aspect = gl.canvas.width / gl.canvas.height;
-    mat4.perspective(projectionMat, fov, aspect, 0.01, 100.0);
+    mat4.perspective(projectionMat, fov, aspect, 0.1, 10.0);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     mat4.mul(modelViewMat, modelMat, viewMat);
     gl.uniformMatrix4fv(program.uniforms.modelview_mat, false, modelViewMat);

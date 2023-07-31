@@ -4,6 +4,7 @@ import * as util from "./util.js";
 export var VertexAttributeLayout;
 (function (VertexAttributeLayout) {
     VertexAttributeLayout[VertexAttributeLayout["Position"] = 0] = "Position";
+    VertexAttributeLayout[VertexAttributeLayout["Normal"] = 1] = "Normal";
 })(VertexAttributeLayout || (VertexAttributeLayout = {}));
 export function loadGL() {
     let canvas = document.getElementById("canvas");

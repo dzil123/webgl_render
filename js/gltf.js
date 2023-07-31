@@ -103,6 +103,30 @@ function loadPrimitive(gl, gltf, primitive, scene) {
                 drawArrayCount: accessor.count,
             };
         }
+        normalBlock: {
+            const vertexNormal = VertexAttributeLayout.Normal;
+            let accessorIndex = primitive.attributes["NORMAL"];
+            if (accessorIndex === undefined) {
+                break normalBlock;
+            }
+            let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+            console.assert(accessor.type === "VEC3");
+            console.assert(accessor.componentType === gl.FLOAT);
+            // accessor.normalized known false
+            let bufferViewIndex = accessor.bufferView;
+            if (bufferViewIndex === undefined) {
+                gl.disableVertexAttribArray(vertexNormal);
+                gl.vertexAttrib3f(vertexNormal, 0, 0, 0);
+                break normalBlock;
+            }
+            let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+            let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+            console.assert(bufferView.target === gl.ARRAY_BUFFER);
+            gl.bindBuffer(bufferView.target, bufferView.glBuffer);
+            gl.enableVertexAttribArray(vertexNormal);
+            gl.vertexAttribPointer(vertexNormal, accessorTypeToNumComponents(accessor.type), accessor.componentType, accessor.normalized ?? false, gltfBufferView.byteStride ?? 0, accessor.byteOffset ?? 0);
+            gl.bindBuffer(bufferView.target, null);
+        }
         indicesBlock: {
             let accessorIndex = primitive.indices;
             if (accessorIndex === undefined) {
