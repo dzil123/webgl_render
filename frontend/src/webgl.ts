@@ -11,6 +11,7 @@ export type GL2 = WebGL2RenderingContextStrict &
 
 export enum VertexAttributeLayout {
   Position = 0,
+  Normal = 1,
 }
 
 export interface Program<K extends keyof any> {

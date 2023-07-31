@@ -38,5 +38,5 @@ func serialize():
 
 func _physics_process(_delta):
 	var data = serialize()
-	print(data)
+	#print(data)
 	server.send_to_all_clients(data)
