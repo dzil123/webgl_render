@@ -37,7 +37,8 @@ gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
 // const modelName = "polygon.gltf";
-const modelName = "suzanne.gltf";
+// const modelName = "suzanne.gltf";
+const modelName = "suzanne_smooth.gltf";
 let [gltfDoc, scene] = await gltf.loadGltf(gl, modelName);
 
 let render = scene.meshes[0]!.primitives[0]!;
