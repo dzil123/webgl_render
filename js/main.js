@@ -9,6 +9,7 @@ const viewMat = mat4.create();
 const modelViewMat = mat4.create(); // tmp
 const projectionMat = mat4.create();
 function message_handler(data) {
+    // console.log(JSON.stringify(data["mat4"]));
     mat4.invert(viewMat, data["mat4"]);
 }
 let gl = webgl.loadGL();
@@ -28,8 +29,8 @@ const modelName = "suzanne_smooth.gltf";
 let [gltfDoc, scene] = await gltf.loadGltf(gl, modelName);
 let render = scene.meshes[0].primitives[0];
 const defaultViewMat = [
-    0.760406, 0, -0.649448, 0, -0.039648, 0.998135, -0.046421, 0, 0.648236, 0.061048,
-    0.758988, 0, 3.823527, 0.299516, 7.624601, 1,
+    0.793353, 0, -0.608761, 0, -0.113548, 0.98245, -0.147979, 0, 0.598078, 0.186524,
+    0.77943, 0, 2.028424, 0.556175, 2.414567, 1,
 ];
 mat4.invert(viewMat, defaultViewMat);
 let ws_promise = websocket.createWS(message_handler);

@@ -12,8 +12,8 @@ uniform mat4 projection_mat; // camera -> clip
 
 void main() {
     out_pos = (modelview_mat * vec4(in_pos, 1.0)).xyz;
-    // out_normal = (modelview_mat * vec4(in_normal, 0.0)).xyz;
-    out_normal = in_normal;
+    out_normal = (modelview_mat * vec4(in_normal, 0.0)).xyz;
+    // out_normal = in_normal;
 
     gl_Position = projection_mat * vec4(out_pos, 1.0);
     index_id = gl_VertexID;
