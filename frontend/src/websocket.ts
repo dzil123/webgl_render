@@ -8,8 +8,8 @@ interface WSListener {
 }
 
 let conn: WebSocket | null = null;
-let promises_open: Array<WSListener> = [];
-let status_html = util.nonnull(document.getElementById("websocket_status"));
+const promises_open: Array<WSListener> = [];
+const status_html = util.nonnull(document.getElementById("websocket_status"));
 
 function promises_foreach(callback: (element: WSListener) => void) {
   promises_open.forEach(callback);
@@ -17,7 +17,7 @@ function promises_foreach(callback: (element: WSListener) => void) {
 }
 
 function make_on_message(
-  msg_handler: (data: object) => void
+  msg_handler: (data: object) => void,
 ): (event: MessageEvent) => void {
   return on_message;
 
@@ -33,7 +33,7 @@ function make_on_message(
       data_raw = event.data;
     }
 
-    let data: object = JSON.parse(data_raw);
+    const data: object = JSON.parse(data_raw);
 
     status_html.innerText = "connected";
 
@@ -59,13 +59,13 @@ async function on_error(event: Event) {
 }
 
 export function createWS(
-  message_handler: (data: object) => void
+  message_handler: (data: object) => void,
 ): Promise<void> {
   if (conn !== null) {
     conn.close();
   }
 
-  let promise = new Promise<void>((resolve, reject) => {
+  const promise = new Promise<void>((resolve, reject) => {
     promises_open.push({ resolve, reject });
   });
 

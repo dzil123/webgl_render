@@ -44,7 +44,7 @@ function accessorTypeToNumComponents(t: AccessorType) {
 }
 
 function componentTypeToByteSize(
-  t: GL.ArrayType | GL.GLenum<"INT"> | GL.GLenum<"UNSIGNED_INT">
+  t: GL.ArrayType | GL.GLenum<"INT"> | GL.GLenum<"UNSIGNED_INT">,
 ): number {
   const LUT = {
     5120: 1, // BYTE
@@ -104,7 +104,9 @@ type IndicesComponentType =
   | GL.GLenum<"UNSIGNED_SHORT">
   | GL.GLenum<"UNSIGNED_INT">;
 
-type SpecialAccessor = { [K in keyof SpecialTypes as Brand<K>]: SpecialTypes[K] } & {
+type SpecialAccessor = {
+  [K in keyof SpecialTypes as Brand<K>]: SpecialTypes[K];
+} & {
   [x: Indices]: {
     componentType: IndicesComponentType;
     type: "SCALAR";
@@ -126,8 +128,8 @@ interface Scene {
 }
 
 async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
-  let uri = util.nonnull(buffer.uri);
-  let data = await util.download("models/", uri, (r) => r.arrayBuffer());
+  const uri = util.nonnull(buffer.uri);
+  const data = await util.download("models/", uri, (r) => r.arrayBuffer());
   if (data.byteLength != buffer.byteLength) {
     throw { msg: "Size doesn't match", data, buffer };
   }
@@ -137,20 +139,20 @@ async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
 function loadBufferView(
   gl: GL2,
   bufferView: BufferView,
-  scene: Pick<Scene, "buffers">
+  scene: Pick<Scene, "buffers">,
 ): Scene["bufferViews"][0] {
   if (bufferView.byteStride !== undefined) {
     throw "byteStride unsupported";
   }
 
-  let array = util.nonnull(scene.buffers[bufferView.buffer]);
-  let offset = bufferView.byteOffset || 0;
-  let target = util.nonnull(bufferView.target); // TODO: lift restriction?
+  const array = util.nonnull(scene.buffers[bufferView.buffer]);
+  const offset = bufferView.byteOffset || 0;
+  const target = util.nonnull(bufferView.target); // TODO: lift restriction?
 
   // TODO: is it ok to use Uint8 regardless of AccessorType?
-  let arrayView = new Uint8Array(array, offset, bufferView.byteLength);
+  const arrayView = new Uint8Array(array, offset, bufferView.byteLength);
 
-  let glBuffer = util.nonnull(gl.createBuffer());
+  const glBuffer = util.nonnull(gl.createBuffer());
   gl.bindBuffer(target, glBuffer);
   gl.bufferData(target, arrayView, gl.STATIC_DRAW);
   gl.bindBuffer(target, null);
@@ -183,15 +185,15 @@ function loadPrimitive(
   gl: GL2,
   gltf: Gltf,
   primitive: Primitive,
-  scene: Pick<Scene, "buffers" | "bufferViews">
+  scene: Pick<Scene, "buffers" | "bufferViews">,
 ): RenderMode {
-  let program = util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
+  const program = util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
 
-  let vao = util.nonnull(gl.createVertexArray());
+  const vao = util.nonnull(gl.createVertexArray());
   gl.bindVertexArray(vao);
 
   let renderMode: RenderMode = { skipRender: true };
-  let renderShared: RenderCommon = {
+  const renderShared: RenderCommon = {
     drawMode: primitive.mode ?? gl.TRIANGLES,
     vao,
   };
@@ -200,25 +202,25 @@ function loadPrimitive(
     positionBlock: {
       const vertexPosition = VertexAttributeLayout.Position;
 
-      let accessorIndex = primitive.attributes["POSITION"];
+      const accessorIndex = primitive.attributes["POSITION"];
       if (accessorIndex === undefined) {
         renderMode = { skipRender: true };
         break attributesBlock;
       }
 
-      let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+      const accessor = util.nonnull(gltf.accessors[accessorIndex]);
       console.assert(accessor.type === "VEC3");
       console.assert(accessor.componentType === gl.FLOAT);
       // accessor.normalized known false
 
-      let bufferViewIndex = accessor.bufferView;
+      const bufferViewIndex = accessor.bufferView;
       if (bufferViewIndex === undefined) {
         gl.disableVertexAttribArray(vertexPosition);
         gl.vertexAttrib3f(vertexPosition, 0, 0, 0);
         break positionBlock;
       }
-      let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
-      let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+      const gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+      const bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
       console.assert(bufferView.target === gl.ARRAY_BUFFER);
 
       gl.bindBuffer(bufferView.target, bufferView.glBuffer);
@@ -229,7 +231,7 @@ function loadPrimitive(
         accessor.componentType,
         accessor.normalized ?? false,
         gltfBufferView.byteStride ?? 0,
-        accessor.byteOffset ?? 0
+        accessor.byteOffset ?? 0,
       );
       gl.bindBuffer(bufferView.target, null);
 
@@ -242,25 +244,25 @@ function loadPrimitive(
     normalBlock: {
       const vertexNormal = VertexAttributeLayout.Normal;
 
-      let accessorIndex = primitive.attributes["NORMAL"];
+      const accessorIndex = primitive.attributes["NORMAL"];
       if (accessorIndex === undefined) {
         break normalBlock;
       }
 
-      let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+      const accessor = util.nonnull(gltf.accessors[accessorIndex]);
       console.assert(accessor.type === "VEC3");
       console.assert(accessor.componentType === gl.FLOAT);
       // accessor.normalized known false
 
-      let bufferViewIndex = accessor.bufferView;
+      const bufferViewIndex = accessor.bufferView;
       if (bufferViewIndex === undefined) {
         gl.disableVertexAttribArray(vertexNormal);
         gl.vertexAttrib3f(vertexNormal, 0, 0, 0);
         break normalBlock;
       }
 
-      let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
-      let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+      const gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+      const bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
       console.assert(bufferView.target === gl.ARRAY_BUFFER);
 
       gl.bindBuffer(bufferView.target, bufferView.glBuffer);
@@ -271,31 +273,31 @@ function loadPrimitive(
         accessor.componentType,
         accessor.normalized ?? false,
         gltfBufferView.byteStride ?? 0,
-        accessor.byteOffset ?? 0
+        accessor.byteOffset ?? 0,
       );
       gl.bindBuffer(bufferView.target, null);
     }
 
     indicesBlock: {
-      let accessorIndex = primitive.indices;
+      const accessorIndex = primitive.indices;
       if (accessorIndex === undefined) {
         break indicesBlock;
       }
 
-      let accessor = util.nonnull(gltf.accessors[accessorIndex]);
+      const accessor = util.nonnull(gltf.accessors[accessorIndex]);
       console.assert(accessor.type === "SCALAR");
       console.assert(
         [gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT, gl.UNSIGNED_INT].includes(
-          accessor.componentType
-        )
+          accessor.componentType,
+        ),
       );
 
-      let bufferViewIndex = accessor.bufferView;
+      const bufferViewIndex = accessor.bufferView;
       if (bufferViewIndex === undefined) {
         throw "Meaningless";
       }
-      let gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
-      let bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
+      const gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
+      const bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
       console.assert(bufferView.target === gl.ELEMENT_ARRAY_BUFFER);
       console.assert(gltfBufferView.byteStride === undefined);
 
@@ -303,7 +305,8 @@ function loadPrimitive(
 
       let offset = 0;
       if (accessor.byteOffset !== undefined) {
-        offset = accessor.byteOffset / componentTypeToByteSize(accessor.componentType);
+        offset =
+          accessor.byteOffset / componentTypeToByteSize(accessor.componentType);
         console.assert(Number.isInteger(offset));
       }
 
@@ -343,7 +346,7 @@ export function draw(gl: GL2, renderMode: RenderMode) {
       renderMode.drawMode,
       renderMode.drawElementsCount,
       renderMode.componentType as any, // overloads are broken
-      renderMode.byteOffset
+      renderMode.byteOffset,
     );
   }
 
@@ -351,7 +354,9 @@ export function draw(gl: GL2, renderMode: RenderMode) {
 }
 
 async function downloadGltf(name: string): Promise<Gltf> {
-  let gltf: Partial<Gltf> = await util.download("models/", name, (r) => r.json());
+  const gltf: Partial<Gltf> = await util.download("models/", name, (r) =>
+    r.json(),
+  );
   console.dir(gltf);
 
   if (gltf?.asset?.version === "2.0") {
@@ -362,16 +367,20 @@ async function downloadGltf(name: string): Promise<Gltf> {
 }
 
 export async function loadGltf(gl: GL2, name: string): Promise<[Gltf, Scene]> {
-  let gltf = await downloadGltf(name);
+  const gltf = await downloadGltf(name);
 
-  let scene: Partial<Scene> = {};
+  const scene: Partial<Scene> = {};
 
   scene.buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
 
-  scene.bufferViews = gltf.bufferViews.map((v) => loadBufferView(gl, v, scene as any));
+  scene.bufferViews = gltf.bufferViews.map((v) =>
+    loadBufferView(gl, v, scene as any),
+  );
 
   scene.meshes = gltf.meshes.map((mesh) => ({
-    primitives: mesh.primitives.map((v) => loadPrimitive(gl, gltf, v, scene as any)),
+    primitives: mesh.primitives.map((v) =>
+      loadPrimitive(gl, gltf, v, scene as any),
+    ),
   }));
 
   return [gltf, scene as Scene];

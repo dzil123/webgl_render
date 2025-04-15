@@ -20,7 +20,7 @@ export interface Program<K extends keyof any> {
 }
 
 export function loadGL(): GL2 {
-  let canvas = document.getElementById("canvas");
+  const canvas = document.getElementById("canvas");
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error("Expected element to be a canvas");
   }
@@ -43,7 +43,9 @@ function typeOfShader(gl: GL2, name: string): GL.ShaderType {
 
 // input.replaceAll(/^\s*#include\s+"([\w.-_]*)"/mg, (_, name) => name.toUpperCase())
 export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
-  let include = await util.download("shaders/", "include.glsl", (r) => r.text());
+  const include = await util.download("shaders/", "include.glsl", (r) =>
+    r.text(),
+  );
   let source = await util.download("shaders/", name, (r) => r.text());
   source = include + source;
 
@@ -59,25 +61,25 @@ export async function loadShader(gl: GL2, name: string): Promise<WebGLShader> {
 export async function loadProgram<K extends string>(
   gl: GL2,
   shaders: string[],
-  uniformNames: K[]
+  uniformNames: K[],
 ): Promise<Program<K>> {
-  let glProgram = util.nonnull(gl.createProgram());
+  const glProgram = util.nonnull(gl.createProgram());
 
   await Promise.all(
     shaders.map(async (name) => {
-      let shader = await loadShader(gl, name);
+      const shader = await loadShader(gl, name);
       gl.attachShader(glProgram, shader);
 
       // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
       // console.log(ext.getTranslatedShaderSource(shader));
 
       gl.deleteShader(shader);
-    })
+    }),
   );
 
   gl.linkProgram(glProgram);
 
-  let uniforms: Partial<Record<K, WebGLUniformLocation>> = {};
+  const uniforms: Partial<Record<K, WebGLUniformLocation>> = {};
   uniformNames.forEach((name) => {
     uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
   });
@@ -102,20 +104,20 @@ export function texture(
   gl: GL2,
   program: WebGLProgram,
   name: string,
-  width: number
+  width: number,
 ): (data: Float32Array) => void {
   // keep a counter for each program to assign a unique monotonic id for each texture
-  let global_storage = globalTextures(program);
+  const global_storage = globalTextures(program);
   if (global_storage.length == 0) {
     global_storage[0] = 0;
   } else {
-    global_storage[0] += 1;
+    global_storage[0]! += 1;
   }
-  let index = util.nonnull(global_storage[0]);
+  const index = util.nonnull(global_storage[0]);
 
-  let unit = textureIndex(index);
+  const unit = textureIndex(index);
 
-  let uniformLocation = gl.getUniformLocation(program, name);
+  const uniformLocation = gl.getUniformLocation(program, name);
   if (uniformLocation === null) {
     console.warn(`unused texture '${name}'`);
 
@@ -167,20 +169,20 @@ export function texture(
       border,
       format,
       type,
-      pixels
+      pixels,
     );
   }
 }
 
 export function resize(gl: GL2) {
-  let canvas = gl.canvas;
+  const canvas = gl.canvas;
 
   let dpr = window.devicePixelRatio;
   dpr = Math.min(dpr, 2);
-  let rect = gl.canvas.getBoundingClientRect();
+  const rect = gl.canvas.getBoundingClientRect();
 
-  let width = Math.round(rect.width * dpr);
-  let height = Math.round(rect.height * dpr);
+  const width = Math.round(rect.width * dpr);
+  const height = Math.round(rect.height * dpr);
 
   if (canvas.width != width || canvas.height != height) {
     canvas.width = width;
@@ -188,7 +190,7 @@ export function resize(gl: GL2) {
 
     gl.viewport(0, 0, width, height);
 
-    let resolution_element = util.nonnull(document.getElementById("res"));
+    const resolution_element = util.nonnull(document.getElementById("res"));
     resolution_element.innerText = `${dpr} ${gl.canvas.width} ${gl.canvas.height}`;
   }
 }

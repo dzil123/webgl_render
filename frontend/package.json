@@ -4,17 +4,25 @@
     "clean": "rm -fdr dist/js",
     "dev": "npm run ensure_install && (npm run clean ; npm run tsc_watch & npm run server_watch)",
     "ensure_install": "[ -d node_modules ] || (echo 'run npm install' ; exit 1)",
-    "fmt": "npx -y prettier -w src",
+    "fmt": "npx prettier -w src",
+    "lint": "npx eslint --fix src ; npm run fmt",
     "server_watch": "npx five-server",
     "start": "npm run dev",
     "tsc_watch": "npx tsc --watch",
     "upgrade": "rm -fdr node_modules package-lock.json && npx -y npm-check-updates -u && npm i && cp -v node_modules/gl-matrix/esm/* dist/third-party/gl-matrix/ && cp -v node_modules/webgl-lint/webgl-lint.js dist/third-party/"
   },
   "dependencies": {
-    "five-server": "^0.4.3",
     "gl-matrix": "^3.4.3",
     "typescript": "^5.8.3",
     "webgl-lint": "^1.11.3",
     "webgl-strict-types": "^1.0.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.24.0",
+    "eslint": "^9.24.0",
+    "five-server": "^0.4.3",
+    "globals": "^16.0.0",
+    "prettier": "^3.5.3",
+    "typescript-eslint": "^8.30.1"
   }
 }

@@ -7,7 +7,7 @@ await util.sleep(0.1);
 
 function log(m: mat4) {
   function k(x: number, y: number): string {
-    let i = x + y * 4;
+    const i = x + y * 4;
     // @ts-ignore
     return m[i].toFixed(4).toString();
   }
@@ -19,11 +19,11 @@ function log(m: mat4) {
       "\n" +
       `  ${k(0, 2)} ${k(1, 2)} ${k(2, 2)} ${k(3, 2)}` +
       "\n" +
-      `  ${k(0, 3)} ${k(1, 3)} ${k(2, 3)} ${k(3, 3)} ]`
+      `  ${k(0, 3)} ${k(1, 3)} ${k(2, 3)} ${k(3, 3)} ]`,
   );
 }
 
-let m = mat4.create();
+const m = mat4.create();
 mat4.identity(m);
 mat4.translate(m, m, vec3.fromValues(0, 1, 5));
 mat4.rotateX(m, m, rad(-20));
@@ -36,7 +36,7 @@ log(m);
 // console.log(vec3.str(v));
 
 // let v4 = [0, 0, 0, 1];
-let v4 = vec4.fromValues(0, 0.4, -1, 0);
+const v4 = vec4.fromValues(0, 0.4, -1, 0);
 vec4.transformMat4(v4, v4, m);
 console.log(vec4.str(v4));
 
