@@ -31,12 +31,12 @@ function accessorTypeToNumComponents(t) {
 }
 function componentTypeToByteSize(t) {
     const LUT = {
-        5120: 1,
-        5121: 1,
-        5122: 2,
-        5123: 2,
-        5124: 4,
-        5125: 4,
+        5120: 1, // BYTE
+        5121: 1, // UNSIGNED_BYTE
+        5122: 2, // SHORT
+        5123: 2, // UNSIGNED_SHORT
+        5124: 4, // INT
+        5125: 4, // UNSIGNED_INT
         5126: 4, // FLOAT
     };
     return LUT[t];
