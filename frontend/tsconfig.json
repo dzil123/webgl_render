@@ -5,6 +5,7 @@
       "dom"
     ],
     "module": "es2022",
+    "moduleResolution": "node10",
     "target": "es2022",
     "strict": true,
     "esModuleInterop": true,
