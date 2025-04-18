@@ -7,7 +7,7 @@ export var VertexAttributeLayout;
     VertexAttributeLayout[VertexAttributeLayout["Normal"] = 1] = "Normal";
 })(VertexAttributeLayout || (VertexAttributeLayout = {}));
 export function loadGL() {
-    let canvas = document.getElementById("canvas");
+    const canvas = document.getElementById("canvas");
     if (!(canvas instanceof HTMLCanvasElement)) {
         throw new Error("Expected element to be a canvas");
     }
@@ -28,7 +28,7 @@ function typeOfShader(gl, name) {
 }
 // input.replaceAll(/^\s*#include\s+"([\w.-_]*)"/mg, (_, name) => name.toUpperCase())
 export async function loadShader(gl, name) {
-    let include = await util.download("shaders/", "include.glsl", (r) => r.text());
+    const include = await util.download("shaders/", "include.glsl", (r) => r.text());
     let source = await util.download("shaders/", name, (r) => r.text());
     source = include + source;
     let shader = gl.createShader(typeOfShader(gl, name));
@@ -38,16 +38,16 @@ export async function loadShader(gl, name) {
     return shader;
 }
 export async function loadProgram(gl, shaders, uniformNames) {
-    let glProgram = util.nonnull(gl.createProgram());
+    const glProgram = util.nonnull(gl.createProgram());
     await Promise.all(shaders.map(async (name) => {
-        let shader = await loadShader(gl, name);
+        const shader = await loadShader(gl, name);
         gl.attachShader(glProgram, shader);
         // let ext = util.nonnull(gl.getExtension("WEBGL_debug_shaders"));
         // console.log(ext.getTranslatedShaderSource(shader));
         gl.deleteShader(shader);
     }));
     gl.linkProgram(glProgram);
-    let uniforms = {};
+    const uniforms = {};
     uniformNames.forEach((name) => {
         uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
     });
@@ -65,16 +65,16 @@ const globalTextures = util.new_globals();
 // this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
 export function texture(gl, program, name, width) {
     // keep a counter for each program to assign a unique monotonic id for each texture
-    let global_storage = globalTextures(program);
+    const global_storage = globalTextures(program);
     if (global_storage.length == 0) {
         global_storage[0] = 0;
     }
     else {
         global_storage[0] += 1;
     }
-    let index = util.nonnull(global_storage[0]);
-    let unit = textureIndex(index);
-    let uniformLocation = gl.getUniformLocation(program, name);
+    const index = util.nonnull(global_storage[0]);
+    const unit = textureIndex(index);
+    const uniformLocation = gl.getUniformLocation(program, name);
     if (uniformLocation === null) {
         console.warn(`unused texture '${name}'`);
         function writeTexture(_) { }
@@ -110,17 +110,17 @@ export function texture(gl, program, name, width) {
     }
 }
 export function resize(gl) {
-    let canvas = gl.canvas;
+    const canvas = gl.canvas;
     let dpr = window.devicePixelRatio;
     dpr = Math.min(dpr, 2);
-    let rect = gl.canvas.getBoundingClientRect();
-    let width = Math.round(rect.width * dpr);
-    let height = Math.round(rect.height * dpr);
+    const rect = gl.canvas.getBoundingClientRect();
+    const width = Math.round(rect.width * dpr);
+    const height = Math.round(rect.height * dpr);
     if (canvas.width != width || canvas.height != height) {
         canvas.width = width;
         canvas.height = height;
         gl.viewport(0, 0, width, height);
-        let resolution_element = util.nonnull(document.getElementById("res"));
+        const resolution_element = util.nonnull(document.getElementById("res"));
         resolution_element.innerText = `${dpr} ${gl.canvas.width} ${gl.canvas.height}`;
     }
 }

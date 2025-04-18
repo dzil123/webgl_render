@@ -11,14 +11,14 @@ export function nonnull(v) {
     return v;
 }
 export function new_globals() {
-    let storage = [];
-    let get = (key) => {
-        for (let item of storage) {
+    const storage = [];
+    const get = (key) => {
+        for (const item of storage) {
             if (item[0] === key) {
                 return item[1];
             }
         }
-        let item = [key, []];
+        const item = [key, []];
         storage.push(item);
         return item[1];
     };
@@ -28,11 +28,11 @@ export async function download(subdir, url, callback) {
     if (!url.startsWith("data:")) {
         url = subdir + url;
     }
-    let response = await fetch(url);
+    const response = await fetch(url);
     if (!response.ok) {
         throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
     }
-    let data = await callback(response);
+    const data = await callback(response);
     return data;
 }
 //# sourceMappingURL=util.js.map

@@ -1,8 +1,8 @@
 import * as util from "./util.js";
 const url = "ws://localhost:9080";
 let conn = null;
-let promises_open = [];
-let status_html = util.nonnull(document.getElementById("websocket_status"));
+const promises_open = [];
+const status_html = util.nonnull(document.getElementById("websocket_status"));
 function promises_foreach(callback) {
     promises_open.forEach(callback);
     promises_open.length = 0;
@@ -20,7 +20,7 @@ function make_on_message(msg_handler) {
         else {
             data_raw = event.data;
         }
-        let data = JSON.parse(data_raw);
+        const data = JSON.parse(data_raw);
         status_html.innerText = "connected";
         msg_handler(data);
     }
@@ -42,7 +42,7 @@ export function createWS(message_handler) {
     if (conn !== null) {
         conn.close();
     }
-    let promise = new Promise((resolve, reject) => {
+    const promise = new Promise((resolve, reject) => {
         promises_open.push({ resolve, reject });
     });
     conn = new WebSocket(url);
