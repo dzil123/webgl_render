@@ -9,6 +9,7 @@ jobs:
 
       - name: Install and Build
         run: |
+          . $HOME/.nvm/nvm.sh
           cd frontend
           nvm install
           nvm use
