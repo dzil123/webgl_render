@@ -1,5 +1,3 @@
-#version 300 es
-
 out vec2 outUV;
 
 // https://www.saschawillems.de/blog/2016/08/13/vulkan-tutorial-on-rendering-a-fullscreen-quad-without-buffers/

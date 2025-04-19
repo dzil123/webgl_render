@@ -1,18 +1,22 @@
 /// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
 import "../third-party/webgl-lint.js";
 import * as util from "./util.js";
+import * as canvas from "./canvas.js";
 export var VertexAttributeLayout;
 (function (VertexAttributeLayout) {
     VertexAttributeLayout[VertexAttributeLayout["Position"] = 0] = "Position";
     VertexAttributeLayout[VertexAttributeLayout["Normal"] = 1] = "Normal";
 })(VertexAttributeLayout || (VertexAttributeLayout = {}));
-export function loadGL() {
-    const canvas = document.getElementById("canvas");
-    if (!(canvas instanceof HTMLCanvasElement)) {
-        throw new Error("Expected element to be a canvas");
+export function loadGL(elementId) {
+    const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
+    const ext = gl.getExtension("GMAN_debug_helper");
+    if (ext) {
+        ext.setConfiguration({
+            failUnsetSamplerUniforms: true,
+        });
+        // workaround for webgl-lint bug (TODO report issue / make PR)
+        // const
     }
-    let gl = canvas.getContext("webgl2");
-    gl = util.nonnull(gl);
     return gl;
 }
 function typeOfShader(gl, name) {
@@ -47,9 +51,14 @@ export async function loadProgram(gl, shaders, uniformNames) {
         gl.deleteShader(shader);
     }));
     gl.linkProgram(glProgram);
+    const numUniforms = gl.getProgramParameter(glProgram, gl.ACTIVE_UNIFORMS);
+    console.log(`uniforms found: ${numUniforms}`);
+    for (let i = 0; i < numUniforms; i++) {
+        console.log(`uniform #${i}`, gl.getActiveUniform(glProgram, i));
+    }
     const uniforms = {};
     uniformNames.forEach((name) => {
-        uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
+        uniforms[name] = gl.getUniformLocation(glProgram, name);
     });
     return { glProgram, uniforms: uniforms };
 }
@@ -110,18 +119,8 @@ export function texture(gl, program, name, width) {
     }
 }
 export function resize(gl) {
-    const canvas = gl.canvas;
-    let dpr = window.devicePixelRatio;
-    dpr = Math.min(dpr, 2);
-    const rect = gl.canvas.getBoundingClientRect();
-    const width = Math.round(rect.width * dpr);
-    const height = Math.round(rect.height * dpr);
-    if (canvas.width != width || canvas.height != height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
-        const resolution_element = util.nonnull(document.getElementById("res"));
-        resolution_element.innerText = `${dpr} ${gl.canvas.width} ${gl.canvas.height}`;
+    if (canvas.resize(gl.canvas)) {
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     }
 }
 //# sourceMappingURL=webgl.js.map

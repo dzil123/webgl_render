@@ -2648,6 +2648,9 @@ needs ${sizeNeeded} bytes for draw but buffer is only ${bufferSize} bytes`);
     }
 
     function recordSamplerValues(webglUniformLocation, newValues) {
+      if (!webglUniformLocation) { // TODO: upstream this
+        return;
+      }
       const name = locationsToNamesMap.get(webglUniformLocation);
       const uniformInfos = programToUniformInfoMap.get(webglState.currentProgram);
       const {index, type, values} = uniformInfos.get(name);
