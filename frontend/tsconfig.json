@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "es2022",
-      "dom"
-    ],
+    "lib": ["es2022", "dom"],
     "module": "es2022",
     "moduleResolution": "node10",
     "target": "es2022",
@@ -20,10 +17,6 @@
     "inlineSources": true
     // "preserveWatchOutput": true
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
 }

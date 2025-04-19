@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -10,8 +10,8 @@
     </script>
     <style>
       #canvas {
-        width: 95vmin;
-        height: 95vmin;
+        width: calc(95vmin - 20px);
+        height: calc(95vmin - 20px);
         padding: 0;
         margin: auto 2vmin;
         border: 5px double black;
@@ -22,6 +22,10 @@
         display: inline-block;
       }
     </style>
+    <!-- <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=block"
+      rel="stylesheet"
+    /> -->
   </head>
   <body>
     <canvas id="canvas"></canvas>

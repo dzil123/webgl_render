@@ -4,8 +4,8 @@
     "clean": "rm -fdr dist/js",
     "dev": "npm run ensure_install && (npm run clean ; npm run tsc_watch & npm run server_watch)",
     "ensure_install": "[ -d node_modules ] || (echo 'run npm install' ; exit 1)",
-    "fmt": "npx prettier -w src",
-    "lint": "npx eslint --fix src ; npm run fmt",
+    "fmt": "npx prettier -w .",
+    "lint": "npx eslint --fix ; npm run fmt",
     "server_watch": "npx five-server",
     "start": "npm run dev",
     "tsc_watch": "npx tsc --watch",
@@ -24,5 +24,8 @@
     "globals": "^16.0.0",
     "prettier": "^3.5.3",
     "typescript-eslint": "^8.30.1"
+  },
+  "prettier": {
+    "trailingComma": "all"
   }
 }

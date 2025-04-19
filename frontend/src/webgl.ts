@@ -4,6 +4,7 @@ import "../third-party/webgl-lint.js";
 import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
+import * as canvas from "./canvas.js";
 
 export import GL = WebGLRenderingContextStrict;
 export type GL2 = WebGL2RenderingContextStrict &
@@ -175,22 +176,7 @@ export function texture(
 }
 
 export function resize(gl: GL2) {
-  const canvas = gl.canvas;
-
-  let dpr = window.devicePixelRatio;
-  dpr = Math.min(dpr, 2);
-  const rect = gl.canvas.getBoundingClientRect();
-
-  const width = Math.round(rect.width * dpr);
-  const height = Math.round(rect.height * dpr);
-
-  if (canvas.width != width || canvas.height != height) {
-    canvas.width = width;
-    canvas.height = height;
-
-    gl.viewport(0, 0, width, height);
-
-    const resolution_element = util.nonnull(document.getElementById("res"));
-    resolution_element.innerText = `${dpr} ${gl.canvas.width} ${gl.canvas.height}`;
+  if (canvas.resize(gl.canvas)) {
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
 }
