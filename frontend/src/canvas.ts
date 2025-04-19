@@ -35,3 +35,12 @@ export function resize(canvas: HTMLCanvasElement): boolean {
   }
   return false;
 }
+
+export function getCanvasById(elementId: string): HTMLCanvasElement {
+  const canvas = document.getElementById(elementId);
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("Expected element to be a canvas");
+  }
+  resize(canvas);
+  return canvas;
+}

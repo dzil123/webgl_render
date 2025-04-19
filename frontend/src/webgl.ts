@@ -17,19 +17,20 @@ export enum VertexAttributeLayout {
 
 export interface Program<K extends keyof any> {
   glProgram: WebGLProgram;
-  uniforms: Record<K, WebGLUniformLocation>;
+  uniforms: Record<K, WebGLUniformLocation | null>;
 }
 
-export function loadGL(): GL2 {
-  const canvas = document.getElementById("canvas");
-  if (!(canvas instanceof HTMLCanvasElement)) {
-    throw new Error("Expected element to be a canvas");
+export function loadGL(elementId: string): GL2 {
+  const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
+  const ext = gl.getExtension("GMAN_debug_helper");
+  if (ext) {
+    ext.setConfiguration({
+      failUnsetSamplerUniforms: true,
+    });
+    // workaround for webgl-lint bug (TODO report issue / make PR)
+    // const
   }
-
-  let gl = canvas.getContext("webgl2") as any as GL2 | null;
-  gl = util.nonnull(gl);
-
-  return gl;
+  return gl as unknown as GL2;
 }
 
 function typeOfShader(gl: GL2, name: string): GL.ShaderType {
@@ -80,9 +81,15 @@ export async function loadProgram<K extends string>(
 
   gl.linkProgram(glProgram);
 
-  const uniforms: Partial<Record<K, WebGLUniformLocation>> = {};
+  const numUniforms = gl.getProgramParameter(glProgram, gl.ACTIVE_UNIFORMS);
+  console.log(`uniforms found: ${numUniforms}`);
+  for (let i = 0; i < numUniforms; i++) {
+    console.log(`uniform #${i}`, gl.getActiveUniform(glProgram, i));
+  }
+
+  const uniforms: Partial<Record<K, WebGLUniformLocation | null>> = {};
   uniformNames.forEach((name) => {
-    uniforms[name] = util.nonnull(gl.getUniformLocation(glProgram, name));
+    uniforms[name] = gl.getUniformLocation(glProgram, name);
   });
 
   return { glProgram, uniforms: uniforms as never };
