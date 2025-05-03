@@ -1,6 +1,5 @@
 import { GL, GL2, VertexAttributeLayout } from "./webgl.js";
 import * as util from "./util.js";
-import { mat4, vec3, vec4, glMatrix } from "../third-party/gl-matrix/index.js";
 
 interface Gltf {
   readonly asset: { version: "2.0" };
@@ -29,7 +28,9 @@ enum AccessorTypeEnum {
 }
 type AccessorType = keyof typeof AccessorTypeEnum;
 
-function accessorTypeToNumComponents(t: AccessorType) {
+function accessorTypeToNumComponents<T extends AccessorType>(
+  t: T,
+): (typeof LUT)[(typeof AccessorTypeEnum)[T]] {
   const LUT = {
     [AccessorTypeEnum.SCALAR]: 1,
     [AccessorTypeEnum.VEC2]: 2,
@@ -54,9 +55,9 @@ function componentTypeToByteSize(
     5124: 4, // INT
     5125: 4, // UNSIGNED_INT
     5126: 4, // FLOAT
-  } as any;
+  } as Record<typeof t, number>;
 
-  return LUT[t];
+  return LUT[t]!;
 }
 
 interface Accessor {
@@ -187,7 +188,7 @@ function loadPrimitive(
   primitive: Primitive,
   scene: Pick<Scene, "buffers" | "bufferViews">,
 ): RenderMode {
-  const program = util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
+  util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
 
   const vao = util.nonnull(gl.createVertexArray());
   gl.bindVertexArray(vao);
@@ -227,7 +228,7 @@ function loadPrimitive(
       gl.enableVertexAttribArray(vertexPosition);
       gl.vertexAttribPointer(
         vertexPosition,
-        accessorTypeToNumComponents(accessor.type) as any,
+        accessorTypeToNumComponents(accessor.type),
         accessor.componentType,
         accessor.normalized ?? false,
         gltfBufferView.byteStride ?? 0,
@@ -269,7 +270,7 @@ function loadPrimitive(
       gl.enableVertexAttribArray(vertexNormal);
       gl.vertexAttribPointer(
         vertexNormal,
-        accessorTypeToNumComponents(accessor.type) as any,
+        accessorTypeToNumComponents(accessor.type),
         accessor.componentType,
         accessor.normalized ?? false,
         gltfBufferView.byteStride ?? 0,
@@ -345,7 +346,7 @@ export function draw(gl: GL2, renderMode: RenderMode) {
     gl.drawElements(
       renderMode.drawMode,
       renderMode.drawElementsCount,
-      renderMode.componentType as any, // overloads are broken
+      renderMode.componentType as never, // overloads are broken
       renderMode.byteOffset,
     );
   }
@@ -374,12 +375,12 @@ export async function loadGltf(gl: GL2, name: string): Promise<[Gltf, Scene]> {
   scene.buffers = await Promise.all(gltf.buffers.map(downloadBuffer));
 
   scene.bufferViews = gltf.bufferViews.map((v) =>
-    loadBufferView(gl, v, scene as any),
+    loadBufferView(gl, v, scene as never),
   );
 
   scene.meshes = gltf.meshes.map((mesh) => ({
     primitives: mesh.primitives.map((v) =>
-      loadPrimitive(gl, gltf, v, scene as any),
+      loadPrimitive(gl, gltf, v, scene as never),
     ),
   }));
 

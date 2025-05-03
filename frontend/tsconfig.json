@@ -17,6 +17,7 @@
     "inlineSources": true
     // "preserveWatchOutput": true
   },
+  "files": ["node_modules/webgl-strict-types/index.d.ts"],
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }

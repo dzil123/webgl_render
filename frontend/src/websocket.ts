@@ -4,7 +4,7 @@ const url = "ws://localhost:9080";
 
 interface WSListener {
   resolve: (value?: void) => void;
-  reject: (reason?: any) => void;
+  reject: () => void;
 }
 
 let conn: WebSocket | null = null;

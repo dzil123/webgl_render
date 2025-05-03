@@ -71,7 +71,7 @@ await util.mainloop(() => {
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
 });
 
-function generate_polygon(count: number): [Float32Array, Uint8Array] {
+function _generate_polygon(count: number): [Float32Array, Uint8Array] {
   const delta_angle = (Math.PI * 2) / count;
   const start_angle = (Math.PI + delta_angle) * -0.5;
   const scale = 1.0 / Math.cos(delta_angle * 0.5);

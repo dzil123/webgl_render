@@ -1,7 +1,4 @@
-/// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
-
 import "../third-party/webgl-lint.js";
-import { mat4 } from "../third-party/gl-matrix/index.js";
 
 import * as util from "./util.js";
 import * as canvas from "./canvas.js";
@@ -15,7 +12,7 @@ export enum VertexAttributeLayout {
   Normal = 1,
 }
 
-export interface Program<K extends keyof any> {
+export interface Program<K extends string> {
   glProgram: WebGLProgram;
   uniforms: Record<K, WebGLUniformLocation | null>;
 }
@@ -100,7 +97,7 @@ function textureIndex(i: number): GL.TextureUnit {
     throw new Error(`Texture index ${i} must be 0 <= x < 32`);
   }
 
-  // @ts-ignore
+  // @ts-expect-error this is the correct way to use the api
   return WebGL2RenderingContext.TEXTURE0 + i;
 }
 
