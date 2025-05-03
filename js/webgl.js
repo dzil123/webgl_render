@@ -1,4 +1,3 @@
-/// <reference path="../node_modules/webgl-strict-types/index.d.ts" />
 import "../third-party/webgl-lint.js";
 import * as util from "./util.js";
 import * as canvas from "./canvas.js";
@@ -9,14 +8,14 @@ export var VertexAttributeLayout;
 })(VertexAttributeLayout || (VertexAttributeLayout = {}));
 export function loadGL(elementId) {
     const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     const ext = gl.getExtension("GMAN_debug_helper");
     if (ext) {
         ext.setConfiguration({
             failUnsetSamplerUniforms: true,
         });
-        // workaround for webgl-lint bug (TODO report issue / make PR)
-        // const
     }
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
     return gl;
 }
 function typeOfShader(gl, name) {
@@ -66,16 +65,17 @@ function textureIndex(i) {
     if (!(Number.isInteger(i) && 0 <= i && i < 32)) {
         throw new Error(`Texture index ${i} must be 0 <= x < 32`);
     }
-    // @ts-ignore
+    // @ts-expect-error this is the correct way to use the api
     return WebGL2RenderingContext.TEXTURE0 + i;
 }
+// TODO: rewrite this - texture units must only be unique within a program, not across programs
 const globalTextures = util.new_globals();
 // creates a f32 vec4 datatexture and returns a function to upload data to it
 // this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
 export function texture(gl, program, name, width) {
     // keep a counter for each program to assign a unique monotonic id for each texture
     const global_storage = globalTextures(program);
-    if (global_storage.length == 0) {
+    if (global_storage[0] === undefined) {
         global_storage[0] = 0;
     }
     else {

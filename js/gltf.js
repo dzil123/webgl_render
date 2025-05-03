@@ -45,13 +45,13 @@ async function downloadBuffer(buffer) {
     const uri = util.nonnull(buffer.uri);
     const data = await util.download("models/", uri, (r) => r.arrayBuffer());
     if (data.byteLength != buffer.byteLength) {
-        throw { msg: "Size doesn't match", data, buffer };
+        throw new Error("Size doesn't match", { cause: { data, buffer } });
     }
     return data;
 }
 function loadBufferView(gl, bufferView, scene) {
     if (bufferView.byteStride !== undefined) {
-        throw "byteStride unsupported";
+        throw new Error("byteStride unsupported");
     }
     const array = util.nonnull(scene.buffers[bufferView.buffer]);
     const offset = bufferView.byteOffset || 0;
@@ -65,7 +65,7 @@ function loadBufferView(gl, bufferView, scene) {
     return { arrayView, glBuffer, target };
 }
 function loadPrimitive(gl, gltf, primitive, scene) {
-    const program = util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
+    util.nonnull(gl.getParameter(gl.CURRENT_PROGRAM)); // must set program prior
     const vao = util.nonnull(gl.createVertexArray());
     gl.bindVertexArray(vao);
     let renderMode = { skipRender: true };
@@ -137,7 +137,7 @@ function loadPrimitive(gl, gltf, primitive, scene) {
             console.assert([gl.UNSIGNED_BYTE, gl.UNSIGNED_SHORT, gl.UNSIGNED_INT].includes(accessor.componentType));
             const bufferViewIndex = accessor.bufferView;
             if (bufferViewIndex === undefined) {
-                throw "Meaningless";
+                throw new Error("Meaningless");
             }
             const gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
             const bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
@@ -183,12 +183,12 @@ export function draw(gl, renderMode) {
     gl.bindVertexArray(null);
 }
 async function downloadGltf(name) {
-    const gltf = await util.download("models/", name, (r) => r.json());
+    const gltf = (await util.download("models/", name, (r) => r.json()));
     console.dir(gltf);
     if (gltf?.asset?.version === "2.0") {
         return { ...GLTF_DEFAULT, ...gltf };
     }
-    throw { msg: "Unsupported gltf", asset: gltf.asset };
+    throw new Error("Unsupported gltf", { cause: { asset: gltf.asset } });
 }
 export async function loadGltf(gl, name) {
     const gltf = await downloadGltf(name);

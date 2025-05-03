@@ -5,7 +5,6 @@ await util.sleep(0.1);
 function log(m) {
     function k(x, y) {
         const i = x + y * 4;
-        // @ts-ignore
         return m[i].toFixed(4).toString();
     }
     console.log("\n" +
@@ -31,5 +30,5 @@ const v4 = vec4.fromValues(0, 0.4, -1, 0);
 vec4.transformMat4(v4, v4, m);
 console.log(vec4.str(v4));
 // console.log(mat4.str(m).sl);
-throw "";
+throw new Error("end of demo");
 //# sourceMappingURL=demo.js.map

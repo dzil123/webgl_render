@@ -8,7 +8,11 @@ function promises_foreach(callback) {
     promises_open.length = 0;
 }
 function make_on_message(msg_handler) {
-    return on_message;
+    return (event) => {
+        on_message(event).catch((reason) => {
+            console.error("on_message failed", reason);
+        });
+    };
     async function on_message(event) {
         if (event.data instanceof ArrayBuffer) {
             throw new Error("unexpected arraybuffer");
@@ -25,16 +29,16 @@ function make_on_message(msg_handler) {
         msg_handler(data);
     }
 }
-async function on_open() {
+function on_open() {
     status_html.innerText = "connected, no message";
     console.log("ws open");
     promises_foreach((element) => element.resolve());
 }
-async function on_close() {
+function on_close() {
     status_html.innerText = "not connected";
     console.log("ws close");
 }
-async function on_error(event) {
+function on_error(event) {
     console.log("ws error", JSON.stringify(event));
     promises_foreach((element) => element.reject());
 }
