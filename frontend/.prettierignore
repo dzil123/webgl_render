@@ -1,4 +1,6 @@
 .vscode
-dist
-!dist/*.html
+dist/js
+dist/models
+dist/shaders
+dist/third-party
 docs
