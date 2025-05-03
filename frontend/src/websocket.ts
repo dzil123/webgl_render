@@ -3,15 +3,15 @@ import * as util from "./util.js";
 const url = "ws://localhost:9080";
 
 interface WSListener {
-  resolve: (value?: void) => void;
-  reject: () => void;
+  resolve: () => unknown;
+  reject: () => unknown;
 }
 
 let conn: WebSocket | null = null;
 const promises_open: Array<WSListener> = [];
 const status_html = util.nonnull(document.getElementById("websocket_status"));
 
-function promises_foreach(callback: (element: WSListener) => void) {
+function promises_foreach(callback: (element: WSListener) => unknown) {
   promises_open.forEach(callback);
   promises_open.length = 0;
 }
@@ -20,9 +20,9 @@ function make_on_message(
   msg_handler: (data: object) => void,
 ): (event: MessageEvent) => void {
   return (event) => {
-    on_message(event).catch((reason) =>
-      console.error("on_message failed", reason),
-    );
+    on_message(event).catch((reason: unknown) => {
+      console.error("on_message failed", reason);
+    });
   };
 
   async function on_message(event: MessageEvent) {

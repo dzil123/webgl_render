@@ -103,6 +103,7 @@ function textureIndex(i: number): GL.TextureUnit {
   return WebGL2RenderingContext.TEXTURE0 + i;
 }
 
+// TODO: rewrite this - texture units must only be unique within a program, not across programs
 const globalTextures = util.new_globals<WebGLProgram, number>();
 
 // creates a f32 vec4 datatexture and returns a function to upload data to it
@@ -115,10 +116,10 @@ export function texture(
 ): (data: Float32Array) => void {
   // keep a counter for each program to assign a unique monotonic id for each texture
   const global_storage = globalTextures(program);
-  if (global_storage.length == 0) {
+  if (global_storage[0] === undefined) {
     global_storage[0] = 0;
   } else {
-    global_storage[0]! += 1;
+    global_storage[0] += 1;
   }
   const index = util.nonnull(global_storage[0]);
 

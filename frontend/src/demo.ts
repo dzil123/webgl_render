@@ -6,7 +6,8 @@ const rad = glMatrix.toRadian;
 await util.sleep(0.1);
 
 function log(m: mat4) {
-  function k(x: number, y: number): string {
+  type RowCol = 0 | 1 | 2 | 3;
+  function k(x: RowCol, y: RowCol): string {
     const i = x + y * 4;
     return m[i]!.toFixed(4).toString();
   }
