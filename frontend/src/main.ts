@@ -96,34 +96,8 @@ mat4.invert(viewMat, defaultViewMat);
 
 // framebuffer vs renderbuffer
 
-const fps_element = util.nonnull(document.getElementById("fps"));
-const fps_avg_element = util.nonnull(document.getElementById("fps_avg"));
-let then = 0;
-let then_then = 0;
-let counter = 0;
-const avg_len = 60;
-
-while (true) {
-  await util.sleep(0.03);
-  const now = (await util.frame()) / 1000;
-
+await util.mainloop(() => {
   webgl.resize(gl);
-
-  const delta = now - then;
-  then = now;
-  const fps = 1.0 / delta;
-  const fps_str = fps.toFixed(2);
-  fps_element.innerText = fps_str;
-
-  counter += 1;
-  if (counter >= avg_len) {
-    counter = 0;
-    const delta = now - then_then;
-    then_then = now;
-    const fps = avg_len / delta;
-    const fps_str = fps.toFixed(2);
-    fps_avg_element.innerText = fps_str;
-  }
 
   const fov = 70.0;
   const aspect = gl.canvas.width / gl.canvas.height;
@@ -138,7 +112,7 @@ while (true) {
 
   // gltf.draw(gl, render);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
-}
+});
 
 function generate_polygon(count: number): [Float32Array, Uint8Array] {
   const delta_angle = (Math.PI * 2) / count;
