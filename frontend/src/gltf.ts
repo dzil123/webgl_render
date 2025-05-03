@@ -132,7 +132,7 @@ async function downloadBuffer(buffer: Buffer): Promise<ArrayBuffer> {
   const uri = util.nonnull(buffer.uri);
   const data = await util.download("models/", uri, (r) => r.arrayBuffer());
   if (data.byteLength != buffer.byteLength) {
-    throw { msg: "Size doesn't match", data, buffer };
+    throw new Error("Size doesn't match", { cause: { data, buffer } });
   }
   return data;
 }
@@ -143,7 +143,7 @@ function loadBufferView(
   scene: Pick<Scene, "buffers">,
 ): Scene["bufferViews"][0] {
   if (bufferView.byteStride !== undefined) {
-    throw "byteStride unsupported";
+    throw new Error("byteStride unsupported");
   }
 
   const array = util.nonnull(scene.buffers[bufferView.buffer]);
@@ -295,7 +295,7 @@ function loadPrimitive(
 
       const bufferViewIndex = accessor.bufferView;
       if (bufferViewIndex === undefined) {
-        throw "Meaningless";
+        throw new Error("Meaningless");
       }
       const gltfBufferView = util.nonnull(gltf.bufferViews[bufferViewIndex]);
       const bufferView = util.nonnull(scene.bufferViews[bufferViewIndex]);
@@ -355,16 +355,16 @@ export function draw(gl: GL2, renderMode: RenderMode) {
 }
 
 async function downloadGltf(name: string): Promise<Gltf> {
-  const gltf: Partial<Gltf> = await util.download("models/", name, (r) =>
+  const gltf = (await util.download("models/", name, (r) =>
     r.json(),
-  );
+  )) as Partial<Gltf>;
   console.dir(gltf);
 
   if (gltf?.asset?.version === "2.0") {
     return { ...GLTF_DEFAULT, ...gltf };
   }
 
-  throw { msg: "Unsupported gltf", asset: gltf.asset };
+  throw new Error("Unsupported gltf", { cause: { asset: gltf.asset } });
 }
 
 export async function loadGltf(gl: GL2, name: string): Promise<[Gltf, Scene]> {

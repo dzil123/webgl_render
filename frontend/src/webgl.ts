@@ -19,14 +19,16 @@ export interface Program<K extends string> {
 
 export function loadGL(elementId: string): GL2 {
   const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
+
+  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
   const ext = gl.getExtension("GMAN_debug_helper");
   if (ext) {
     ext.setConfiguration({
       failUnsetSamplerUniforms: true,
     });
-    // workaround for webgl-lint bug (TODO report issue / make PR)
-    // const
   }
+  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+
   return gl as unknown as GL2;
 }
 

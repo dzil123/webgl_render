@@ -19,7 +19,11 @@ function promises_foreach(callback: (element: WSListener) => void) {
 function make_on_message(
   msg_handler: (data: object) => void,
 ): (event: MessageEvent) => void {
-  return on_message;
+  return (event) => {
+    on_message(event).catch((reason) =>
+      console.error("on_message failed", reason),
+    );
+  };
 
   async function on_message(event: MessageEvent) {
     if (event.data instanceof ArrayBuffer) {
@@ -30,10 +34,10 @@ function make_on_message(
     if (event.data instanceof Blob) {
       data_raw = await event.data.text();
     } else {
-      data_raw = event.data;
+      data_raw = event.data as string;
     }
 
-    const data: object = JSON.parse(data_raw);
+    const data = JSON.parse(data_raw) as object;
 
     status_html.innerText = "connected";
 
@@ -41,19 +45,19 @@ function make_on_message(
   }
 }
 
-async function on_open() {
+function on_open() {
   status_html.innerText = "connected, no message";
   console.log("ws open");
   promises_foreach((element) => element.resolve());
 }
 
-async function on_close() {
+function on_close() {
   status_html.innerText = "not connected";
 
   console.log("ws close");
 }
 
-async function on_error(event: Event) {
+function on_error(event: Event) {
   console.log("ws error", JSON.stringify(event));
   promises_foreach((element) => element.reject());
 }

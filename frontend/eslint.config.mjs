@@ -11,7 +11,7 @@ export default defineConfig([
     extends: ["js/recommended"],
     languageOptions: { globals: globals.browser },
   },
-  tseslint.configs.recommended,
+  tseslint.configs.recommendedTypeChecked,
   {
     rules: {
       "@typescript-eslint/no-unused-vars": [

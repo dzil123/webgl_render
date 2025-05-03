@@ -41,4 +41,4 @@ console.log(vec4.str(v4));
 
 // console.log(mat4.str(m).sl);
 
-throw "";
+throw new Error("end of demo");
