@@ -11,6 +11,7 @@ ctx.textBaseline = "middle";
 ctx.fillText("H", toHalf(ctx.canvas.width / 2), toHalf(ctx.canvas.height / 2));
 // �￼
 void (async () => {
+    return;
     const blob = await ctx.canvas.convertToBlob();
     const url = URL.createObjectURL(blob);
     document.addEventListener("click", () => window.open(url, "_blank"), {
