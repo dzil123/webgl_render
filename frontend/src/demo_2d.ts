@@ -8,14 +8,22 @@ export const ctx = util.nonnull(
   canvas.createOffscreenSameSize(canvasReal).getContext("2d", { alpha: false }),
 );
 
+ctx.filter = "url(#alphaThresholdFilter)";
 ctx.fillStyle = "white";
 ctx.font = `200 ${ctx.canvas.width * 0.5}px serif`;
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
-ctx.fillText("H", ctx.canvas.width / 2, ctx.canvas.height / 2);
+ctx.fillText("H", toHalf(ctx.canvas.width / 2), toHalf(ctx.canvas.height / 2));
 // �￼
 
-// const url = ctx.canvas.toDataURL();
-// document.addEventListener("click", () => window.open(url, "_blank"), {
-//   once: true,
-// });
+void (async () => {
+  const blob = await ctx.canvas.convertToBlob();
+  const url = URL.createObjectURL(blob);
+  document.addEventListener("click", () => window.open(url, "_blank"), {
+    once: true,
+  });
+})();
+
+function toHalf(x: number) {
+  return Math.round(x + 0.5) - 0.5;
+}

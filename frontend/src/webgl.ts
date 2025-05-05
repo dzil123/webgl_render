@@ -94,7 +94,7 @@ export async function loadProgram<K extends string>(
   return { glProgram, uniforms: uniforms as never };
 }
 
-function textureIndex(i: number): GL.TextureUnit {
+export function textureIndex(i: number): GL.TextureUnit {
   if (!(Number.isInteger(i) && 0 <= i && i < 32)) {
     throw new Error(`Texture index ${i} must be 0 <= x < 32`);
   }
@@ -106,9 +106,17 @@ function textureIndex(i: number): GL.TextureUnit {
 // TODO: rewrite this - texture units must only be unique within a program, not across programs
 const globalTextures = util.new_globals<WebGLProgram, number>();
 
+export function textureSetNearest(gl: GL2) {
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+}
+
 // creates a f32 vec4 datatexture and returns a function to upload data to it
 // this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
-export function texture(
+export function textureFloat32Array(
   gl: GL2,
   program: WebGLProgram,
   name: string,
@@ -139,12 +147,7 @@ export function texture(
 
   gl.activeTexture(unit);
   gl.bindTexture(gl.TEXTURE_2D, texture);
-
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+  textureSetNearest(gl);
 
   gl.uniform1i(uniformLocation, index);
 

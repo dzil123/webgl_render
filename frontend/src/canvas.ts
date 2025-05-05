@@ -22,8 +22,11 @@ export function resize(canvas: HTMLCanvasElement): boolean {
   // dpr = Math.min(dpr, 2);
   const rect = canvas.getBoundingClientRect();
 
-  const width = Math.round(rect.width * dpr);
-  const height = Math.round(rect.height * dpr);
+  // const width = Math.round(rect.width * dpr);
+  // const height = Math.round(rect.height * dpr);
+
+  const x = 17;
+  const [width, height] = [x, x];
 
   if (canvas.width != width || canvas.height != height) {
     canvas.width = width;
@@ -35,6 +38,19 @@ export function resize(canvas: HTMLCanvasElement): boolean {
   }
   return false;
 }
+
+// monkey patch to follow OffscreenCanvas.convertToBlob
+declare global {
+  interface HTMLCanvasElement {
+    convertToBlob: () => Promise<Blob>;
+  }
+}
+
+HTMLCanvasElement.prototype.convertToBlob = async function convertToBlob() {
+  return util.nonnull(
+    await new Promise<Blob | null>((resolve) => this.toBlob(resolve)),
+  );
+};
 
 export function getCanvasById(elementId: string): HTMLCanvasElement {
   const canvas = document.getElementById(elementId);
