@@ -15,7 +15,7 @@ export async function mainloop(callback: () => void) {
   const avg_len = 60;
 
   while (true) {
-    await sleep(0.03);
+    await sleep(1);
     const now = (await frame()) / 1000;
 
     const delta = now - then;

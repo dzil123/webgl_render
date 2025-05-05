@@ -5,25 +5,43 @@ import { ctx } from "./demo_2d.js";
 
 const gl = webgl.loadGL("canvas");
 
-const program = await webgl.loadProgram(
+const programSim = await webgl.loadProgram(
   gl,
-  ["fullscreen_tri.vert", "sand.frag"],
-  ["bw", "buffer", "resolution"],
+  ["fullscreen_tri.vert", "sandSim.frag"],
+  ["bw", "buffer"],
+);
+
+const programRender = await webgl.loadProgram(
+  gl,
+  ["fullscreen_tri.vert", "sandRender.frag"],
+  ["buffer"],
 );
 
 const _aspect = gl.canvas.width / gl.canvas.height;
 
 gl.clearColor(0.5, 0.5, 0.5, 1.0);
-gl.useProgram(program.glProgram);
+gl.useProgram(programSim.glProgram);
 
 const texture_indexes = {
   bw: 1,
-  buffer1: 2,
-  buffer2: 3,
+  buffer1: 2, // src
+  buffer2: 3, // dest
 };
 
 const textures = Object.fromEntries(
-  Object.keys(texture_indexes).map((name) => [name, gl.createTexture()]),
+  Object.keys(texture_indexes).map((name) => {
+    const tex = gl.createTexture();
+
+    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    // @ts-ignore
+    const ext = gl.getExtension("GMAN_debug_helper") as any;
+    if (ext) {
+      ext.tagObject(tex, name);
+    }
+    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+
+    return [name, tex];
+  }),
 ) as Record<keyof typeof texture_indexes, WebGLTexture | null>;
 
 const bindTexture = (tex: keyof typeof texture_indexes) => {
@@ -38,7 +56,7 @@ const initTexture = (tex: keyof typeof texture_indexes) => {
 
 initTexture("bw");
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, ctx.canvas);
-gl.uniform1i(program.uniforms.bw, texture_indexes.bw);
+gl.uniform1i(programSim.uniforms.bw, texture_indexes.bw);
 
 (["buffer1", "buffer2"] as const).forEach((tex) => {
   initTexture(tex);
@@ -54,9 +72,12 @@ gl.uniform1i(program.uniforms.bw, texture_indexes.bw);
     null,
   );
 });
-gl.uniform1i(program.uniforms.buffer, texture_indexes.buffer1);
+gl.uniform1i(programSim.uniforms.buffer, texture_indexes.buffer1);
 
-const debug = true;
+gl.useProgram(programRender.glProgram);
+gl.uniform1i(programRender.uniforms.buffer, texture_indexes.buffer2);
+
+const debug = false;
 if (debug) {
   bindTexture("buffer1");
   gl.texImage2D(
@@ -85,17 +106,27 @@ if (debug) {
   );
 }
 
+const fboSim = gl.createFramebuffer();
+
+// for sim program
 const swapAndBindBuffers = () => {
-  [texture_indexes.buffer1, texture_indexes.buffer2] = [
-    texture_indexes.buffer2,
-    texture_indexes.buffer1,
-  ];
+  [textures.buffer1, textures.buffer2] = [textures.buffer2, textures.buffer1];
 
   bindTexture("buffer1");
-  bindTexture("buffer2");
 };
 
-gl.enable(gl.DEPTH_TEST);
+const renderToBuffer = () => {
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, fboSim);
+  gl.framebufferTexture2D(
+    gl.DRAW_FRAMEBUFFER,
+    gl.COLOR_ATTACHMENT0,
+    gl.TEXTURE_2D,
+    textures.buffer2,
+    0,
+  );
+};
+
 gl.enable(gl.BLEND);
 // premultiplied alpha
 gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
@@ -107,11 +138,20 @@ gl.blendFuncSeparate(
 );
 
 await util.mainloop(() => {
+  console.log("frame");
   webgl.resize(gl);
-  gl.uniform2ui(program.uniforms.resolution, gl.canvas.width, gl.canvas.height);
 
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  // swapAndBindBuffers();
+  gl.useProgram(programSim.glProgram);
+  swapAndBindBuffers();
+  // bindTexture("buffer1");
+  renderToBuffer();
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.useProgram(programRender.glProgram);
+  bindTexture("buffer2");
+  gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
 });
 
