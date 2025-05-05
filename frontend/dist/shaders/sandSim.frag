@@ -16,7 +16,7 @@ ivec2 UV(ivec2 offset) {
 FUNCALT(ivec2, UV)
 
 vec3 RAND(ivec2 offset) {
-    return rand3(vec2(UV(offset)) / vec2(textureSize(buffer, 0)) + vec2(frame, 0));
+    return rand3i(ivec3(UV(offset), frame));
 }
 FUNCALT(vec3, RAND)
 
@@ -26,7 +26,7 @@ float BUFFER(ivec2 offset) {
 FUNCALT(float, BUFFER)
 
 void _eval(inout float f, float mod, int xr, int xb, bool left) {
-    float p = 0.1;
+    float p = 0.2;
     if ((left && (RAND(xr, 0).y < p)) || (!left && (RAND(xr, 0).y > (1.0 - p)))) {
         f += mod * BUFFER(xb, 0) * 1.0;
     }
@@ -39,16 +39,16 @@ void main() {
     float emit = 0.;
     emit = texelFetch(bw, UV(), 0).r;
     // emit = float(UV() == ivec2(25, 0));
-    f += max(BUFFER(), BUFFER(0, 1) - 0.3);
+    f += max(BUFFER(), BUFFER(0, 1) - 0.25);
 
     float decay = RAND().x;
     decay = max(0., min(1., decay));
-    // decay = pow(decay, 3.);
+    decay = pow(decay, 1.02);
     decay = mix(0.01, 0.1, decay);
     // decay = 0.02;
 
-    _eval(f, 1., -1, -1, true);
-    _eval(f, 1., 1, 1, false);
+    _eval(f, 0.81, -1, -1, true);
+    _eval(f, 0.81, 1, 1, false);
     float f0 = 0.;
     _eval(f0, -1., 0, 0, true);
     _eval(f0, -1., 0, 0, false);

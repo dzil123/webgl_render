@@ -10,13 +10,13 @@ export const ctx = util.nonnull(
 
 ctx.filter = "url(#alphaThresholdFilter)";
 ctx.fillStyle = "white";
-ctx.font = `200 ${ctx.canvas.width * 0.5}px serif`;
+ctx.font = `200 ${ctx.canvas.width * 0.2}px serif`;
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
 ctx.fillText(
-  "_ -- _",
+  "howdy",
   toHalf(ctx.canvas.width / 2),
-  toHalf(ctx.canvas.height * 0.7),
+  toHalf(ctx.canvas.height * 0.8),
 );
 // �￼
 
