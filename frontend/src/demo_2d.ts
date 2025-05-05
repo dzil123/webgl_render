@@ -13,7 +13,11 @@ ctx.fillStyle = "white";
 ctx.font = `200 ${ctx.canvas.width * 0.5}px serif`;
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
-ctx.fillText("H", toHalf(ctx.canvas.width / 2), toHalf(ctx.canvas.height / 2));
+ctx.fillText(
+  "_ -- _",
+  toHalf(ctx.canvas.width / 2),
+  toHalf(ctx.canvas.height * 0.7),
+);
 // �￼
 
 void (async () => {

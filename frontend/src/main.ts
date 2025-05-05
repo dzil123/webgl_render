@@ -8,13 +8,13 @@ const gl = webgl.loadGL("canvas");
 const programSim = await webgl.loadProgram(
   gl,
   ["fullscreen_tri.vert", "sandSim.frag"],
-  ["bw", "buffer"],
+  ["bw", "buffer", "frame"],
 );
 
 const programRender = await webgl.loadProgram(
   gl,
   ["fullscreen_tri.vert", "sandRender.frag"],
-  ["buffer"],
+  ["buffer", "gradient"],
 );
 
 const _aspect = gl.canvas.width / gl.canvas.height;
@@ -26,6 +26,7 @@ const texture_indexes = {
   bw: 1,
   buffer1: 2, // src
   buffer2: 3, // dest
+  gradient: 4,
 };
 
 const textures = Object.fromEntries(
@@ -55,7 +56,9 @@ const initTexture = (tex: keyof typeof texture_indexes) => {
 };
 
 initTexture("bw");
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, ctx.canvas);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 gl.uniform1i(programSim.uniforms.bw, texture_indexes.bw);
 
 (["buffer1", "buffer2"] as const).forEach((tex) => {
@@ -76,6 +79,31 @@ gl.uniform1i(programSim.uniforms.buffer, texture_indexes.buffer1);
 
 gl.useProgram(programRender.glProgram);
 gl.uniform1i(programRender.uniforms.buffer, texture_indexes.buffer2);
+
+initTexture("gradient");
+const gradientData = [
+  0x07, 0x07, 0x07, 0x1f, 0x07, 0x07, 0x2f, 0x0f, 0x07, 0x47, 0x0f, 0x07, 0x57,
+  0x17, 0x07, 0x67, 0x1f, 0x07, 0x77, 0x1f, 0x07, 0x8f, 0x27, 0x07, 0x9f, 0x2f,
+  0x07, 0xaf, 0x3f, 0x07, 0xbf, 0x47, 0x07, 0xc7, 0x47, 0x07, 0xdf, 0x4f, 0x07,
+  0xdf, 0x57, 0x07, 0xdf, 0x57, 0x07, 0xd7, 0x5f, 0x07, 0xd7, 0x5f, 0x07, 0xd7,
+  0x67, 0x0f, 0xcf, 0x6f, 0x0f, 0xcf, 0x77, 0x0f, 0xcf, 0x7f, 0x0f, 0xcf, 0x87,
+  0x17, 0xc7, 0x87, 0x17, 0xc7, 0x8f, 0x17, 0xc7, 0x97, 0x1f, 0xbf, 0x9f, 0x1f,
+  0xbf, 0x9f, 0x1f, 0xbf, 0xa7, 0x27, 0xbf, 0xa7, 0x27, 0xbf, 0xaf, 0x2f, 0xb7,
+  0xaf, 0x2f, 0xb7, 0xb7, 0x2f, 0xb7, 0xb7, 0x37, 0xcf, 0xcf, 0x6f, 0xdf, 0xdf,
+  0x9f, 0xef, 0xef, 0xc7, 0xff, 0xff, 0xff,
+];
+gl.texImage2D(
+  gl.TEXTURE_2D,
+  0,
+  gl.RGB,
+  gradientData.length / 3,
+  1,
+  0,
+  gl.RGB,
+  gl.UNSIGNED_BYTE,
+  new Uint8Array(gradientData),
+);
+gl.uniform1i(programRender.uniforms.gradient, texture_indexes.gradient);
 
 const debug = false;
 if (debug) {
@@ -137,13 +165,16 @@ gl.blendFuncSeparate(
   gl.ONE_MINUS_SRC_ALPHA,
 );
 
+let frame = 0;
 await util.mainloop(() => {
+  frame += 1;
   console.log("frame");
   webgl.resize(gl);
 
   gl.useProgram(programSim.glProgram);
   swapAndBindBuffers();
   // bindTexture("buffer1");
+  gl.uniform1ui(programSim.uniforms.frame, frame);
   renderToBuffer();
   gl.clear(gl.COLOR_BUFFER_BIT);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);

@@ -25,7 +25,7 @@ export function resize(canvas: HTMLCanvasElement): boolean {
   // const width = Math.round(rect.width * dpr);
   // const height = Math.round(rect.height * dpr);
 
-  const x = 17;
+  const x = 50;
   const [width, height] = [x, x];
 
   if (canvas.width != width || canvas.height != height) {
