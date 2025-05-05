@@ -3,29 +3,47 @@ import * as webgl from "./webgl.js";
 // import "./demo.js";
 import { ctx } from "./demo_2d.js";
 const gl = webgl.loadGL("canvas");
-const program = await webgl.loadProgram(gl, ["fullscreen_tri.vert", "tex.frag"], ["mytex"]);
+const program = await webgl.loadProgram(gl, ["fullscreen_tri.vert", "sand.frag"], ["bw", "buffer", "resolution"]);
 const _aspect = gl.canvas.width / gl.canvas.height;
 gl.clearColor(0.5, 0.5, 0.5, 1.0);
 gl.useProgram(program.glProgram);
-const bw_tex = gl.createTexture();
-gl.activeTexture(gl.TEXTURE3);
-gl.bindTexture(gl.TEXTURE_2D, bw_tex);
-gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 255, 255]));
-gl.texImage2D(gl.TEXTURE_2D, // target: GL.TexImage2DTarget
-0, // level: GLint
-gl.R8, // internalformat: GL2['R8']
-// ctx.canvas.width, // width: GLsizei (optional)
-// ctx.canvas.height, // height: GLsizei (optional)
-// 0, // border: 0 (optional)
-gl.RED, // format: GL2['RED']
-gl.UNSIGNED_BYTE, // type: GL2['UNSIGNED_BYTE']
-ctx.canvas);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
-gl.uniform1i(program.uniforms.mytex, 3);
+const texture_indexes = {
+    bw: 1,
+    buffer1: 2,
+    buffer2: 3,
+};
+const textures = Object.fromEntries(Object.keys(texture_indexes).map((name) => [name, gl.createTexture()]));
+const bindTexture = (tex) => {
+    gl.activeTexture(webgl.textureIndex(texture_indexes[tex]));
+    gl.bindTexture(gl.TEXTURE_2D, textures[tex]);
+};
+const initTexture = (tex) => {
+    bindTexture(tex);
+    webgl.textureSetNearest(gl);
+};
+initTexture("bw");
+gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, gl.RED, gl.UNSIGNED_BYTE, ctx.canvas);
+gl.uniform1i(program.uniforms.bw, texture_indexes.bw);
+["buffer1", "buffer2"].forEach((tex) => {
+    initTexture(tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.canvas.width, gl.canvas.height, 0, gl.RGB, gl.UNSIGNED_BYTE, null);
+});
+gl.uniform1i(program.uniforms.buffer, texture_indexes.buffer1);
+const debug = true;
+if (debug) {
+    bindTexture("buffer1");
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array([255, 0, 0]));
+    bindTexture("buffer2");
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, 1, 1, 0, gl.RGB, gl.UNSIGNED_BYTE, new Uint8Array([0, 255, 0]));
+}
+const swapAndBindBuffers = () => {
+    [texture_indexes.buffer1, texture_indexes.buffer2] = [
+        texture_indexes.buffer2,
+        texture_indexes.buffer1,
+    ];
+    bindTexture("buffer1");
+    bindTexture("buffer2");
+};
 gl.enable(gl.DEPTH_TEST);
 gl.enable(gl.BLEND);
 // premultiplied alpha
@@ -33,7 +51,9 @@ gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
 gl.blendFuncSeparate(gl.ONE, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 await util.mainloop(() => {
     webgl.resize(gl);
+    gl.uniform2ui(program.uniforms.resolution, gl.canvas.width, gl.canvas.height);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // swapAndBindBuffers();
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
 });
 function _generate_polygon(count) {

@@ -61,7 +61,7 @@ export async function loadProgram(gl, shaders, uniformNames) {
     });
     return { glProgram, uniforms: uniforms };
 }
-function textureIndex(i) {
+export function textureIndex(i) {
     if (!(Number.isInteger(i) && 0 <= i && i < 32)) {
         throw new Error(`Texture index ${i} must be 0 <= x < 32`);
     }
@@ -70,9 +70,16 @@ function textureIndex(i) {
 }
 // TODO: rewrite this - texture units must only be unique within a program, not across programs
 const globalTextures = util.new_globals();
+export function textureSetNearest(gl) {
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+}
 // creates a f32 vec4 datatexture and returns a function to upload data to it
 // this also sets the uniform on the program, so this program must be active (gl.useProgram) when this is called
-export function texture(gl, program, name, width) {
+export function textureFloat32Array(gl, program, name, width) {
     // keep a counter for each program to assign a unique monotonic id for each texture
     const global_storage = globalTextures(program);
     if (global_storage[0] === undefined) {
@@ -93,11 +100,7 @@ export function texture(gl, program, name, width) {
     texture = util.nonnull(texture);
     gl.activeTexture(unit);
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE);
+    textureSetNearest(gl);
     gl.uniform1i(uniformLocation, index);
     const rowSize = 4 * width; // 'width' number of vec4s
     return writeTexture;

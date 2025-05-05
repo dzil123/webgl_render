@@ -13,8 +13,10 @@ export function resize(canvas) {
     const dpr = window.devicePixelRatio;
     // dpr = Math.min(dpr, 2);
     const rect = canvas.getBoundingClientRect();
-    const width = Math.round(rect.width * dpr);
-    const height = Math.round(rect.height * dpr);
+    // const width = Math.round(rect.width * dpr);
+    // const height = Math.round(rect.height * dpr);
+    const x = 17;
+    const [width, height] = [x, x];
     if (canvas.width != width || canvas.height != height) {
         canvas.width = width;
         canvas.height = height;
@@ -24,6 +26,9 @@ export function resize(canvas) {
     }
     return false;
 }
+HTMLCanvasElement.prototype.convertToBlob = async function convertToBlob() {
+    return util.nonnull(await new Promise((resolve) => this.toBlob(resolve)));
+};
 export function getCanvasById(elementId) {
     const canvas = document.getElementById(elementId);
     if (!(canvas instanceof HTMLCanvasElement)) {

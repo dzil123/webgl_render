@@ -15,11 +15,19 @@
         padding: 0;
         margin: auto 2vmin;
         border: 5px double black;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
       }
       #info {
         margin-top: 50px;
         vertical-align: top;
         display: inline-block;
+      }
+      .invisible {
+        /* display: none; is broken in firefox - https://stackoverflow.com/a/55618318 https://bugzilla.mozilla.org/show_bug.cgi?id=376027 */
+        position: absolute;
+        width: 0;
+        height: 0;
       }
     </style>
     <!-- <link
@@ -35,5 +43,12 @@
       <p>FPS avg: <span id="fps_avg"></span></p>
       <p>Resolution: <span id="res"></span></p>
     </div>
+    <svg class="invisible" xmlns="http://www.w3.org/2000/svg">
+      <filter id="alphaThresholdFilter" color-interpolation-filters="sRGB">
+        <feComponentTransfer>
+          <feFuncA type="discrete" tableValues="1" />
+        </feComponentTransfer>
+      </filter>
+    </svg>
   </body>
 </html>
