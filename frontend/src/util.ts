@@ -16,11 +16,13 @@ export async function mainloop(callback: () => Promise<void>) {
   const avg_len = 60;
 
   while (true) {
+    await callback();
+
     let now, delta;
     while (true) {
       now = (await frame()) / 1000;
       delta = now - then;
-      if (delta + 0.001 > 0.1) {
+      if (delta + 0.001 > 0.015) {
         break;
       }
     }
@@ -39,8 +41,6 @@ export async function mainloop(callback: () => Promise<void>) {
       const fps_str = fps.toFixed(2);
       fps_avg_element.innerText = fps_str;
     }
-
-    await callback();
   }
 }
 

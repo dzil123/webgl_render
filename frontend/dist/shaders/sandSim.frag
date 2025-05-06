@@ -53,9 +53,12 @@ void main() {
     vec3 color = vec3(0);
     float f = 0.;
 
-    float emit = 0.;
-    emit = texelFetch(bw, UV(), 0).r;
-    emit = float(UV() == ivec2(50, 0));
+    bool emit = false;
+    emit = emit || (texelFetch(bw, UV(0, -60 * (int(frame) / 8)), 0).r > 0.5) &&
+                       (int(frame) <= 4 * 8);
+    // emit = emit || (UV() == ivec2(20, 39)) && (int(frame) % 3 == 0);
+    emit = emit || (UV() == ivec2(21, 39)) && (int(frame) % 5 == 0);
+    // emit = emit || (UV() == ivec2(1, 2));
     // f += max(BUFFER(0, -1), BUFFER() - 0.25);
     // f += BUFFER(0, -1);
 
@@ -65,16 +68,57 @@ void main() {
     decay = mix(0.0, 0.01, decay);
     // decay = 0.02;
 
-#define OP f +=
-    RANDEVAL((-1, 0), BUFFER(-1, 0), 0., 0.);
-    RANDEVAL((1, 0), 0., 0., BUFFER(1, 0));
-    RANDEVAL((0, -1), 0., BUFFER(0, -1), 0.);
-#undef OP
+    // #define OP f +=
+    //     RANDEVAL((-1, 0), BUFFER(-1, 0), 0., 0.);
+    //     RANDEVAL((1, 0), 0., 0., BUFFER(1, 0));
+    //     RANDEVAL((0, -1), 0., BUFFER(0, -1), 0.);
+    // #undef OP
 
-    f = max(emit, f);
-    f -= decay;
+#define GET(X, Y) ((BUFFER(X, Y) > 0.5) || (UV(X, Y).y < 2))
+
+    bool b = false;
+    // b = b || GET(0, 0);
+    // b = b && !(GET(0, -1) || GET(-1, -1) || GET(1, -1));  // we fall down
+    b = b || (GET(0, 1));               // above falls into us
+    b = b || (GET(1, 1) && GET(1, 0));  // top right falls into us
+    // b = b || (GET(-1, 1) && !GET(-2, 0) && !GET(-1, 0));  // top left falls into us
+
+    int iframe = int(frame);
+    // int pos2x2 = (UV().x & 1) & (((UV().y & 1) ^ (frame & 1)) << 1);
+    // int pos2x2 = \
+    //   ((UX.x & 1) ^ \
+    //   (frame & 1)) | \
+    //   (((UV.y << 1) & 2) ^ ((frame + 1) & 2)
+
+#undef GET
+#define GET(P) (int((BUFFER(P) > 0.5) || UV(P).y <= 0))
+
+    // iframe = 3;
+    int pos2x2 = ((UV().x ^ iframe) & 1) | (((UV().y << 1) ^ (iframe + 1)) & 2);
+    int data = (int[](41088, 51200, 65274, 65516))[pos2x2];
+
+    ivec2 TL = ivec2((int[](0, -1, 0, -1))[pos2x2], (int[](0, 0, 1, 1))[pos2x2]);
+    ivec2 TR = ivec2((int[](1, 0, 1, 0))[pos2x2], (int[](0, 0, 1, 1))[pos2x2]);
+    ivec2 BL = ivec2((int[](0, -1, 0, -1))[pos2x2], (int[](-1, -1, 0, 0))[pos2x2]);
+    ivec2 BR = ivec2((int[](1, 0, 1, 0))[pos2x2], (int[](-1, -1, 0, 0))[pos2x2]);
+
+    int pos = GET(TL) | (GET(TR) << 1) | (GET(BL) << 2) | (GET(BR) << 3);
+    b = ((data >> pos) & 1) != 0;
+
+    b = b || emit;
+    f = float(b);
+    // f = max(emit, f);
+    // f -= decay;
 
     color = vec3(f);
+    // color.rg = vec2(BR) * 0.5 + 0.5;
+    // if ((int(frame) / 200) % 2 == 0) {
+    //     color.r = 0.;
+    // } else {
+    //     // color.r = 0.;
+    //     color.g = 0.;
+    // }
+    // color.rg = vec2(pos2x2 & 1, pos2x2 >> 1);
     // uvec2 SIZE = uvec2(textureSize(buffer, 0));
     // ivec2 pos = ivec2(frame % SIZE.x, (frame / SIZE.x) % SIZE.y);
     outColor = vec4(color, 1.);
