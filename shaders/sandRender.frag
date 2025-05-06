@@ -9,4 +9,5 @@ void main() {
     float f = texture(buffer, outUV).r;
     vec3 gradient_color = texture(gradient, vec2(f, 0.5)).rgb;
     outColor = vec4(gradient_color, 1.);
+    // outColor = vec4(texture(buffer, outUV).rgb, 1.);
 }

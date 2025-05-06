@@ -7,14 +7,20 @@ export function frame() {
 export async function mainloop(callback) {
     const fps_element = nonnull(document.getElementById("fps"));
     const fps_avg_element = nonnull(document.getElementById("fps_avg"));
+    const frame_element = nonnull(document.getElementById("frame"));
     let then = 0;
     let then_then = 0;
     let counter = 0;
     const avg_len = 60;
     while (true) {
-        // await sleep(0.05) ;
-        const now = (await frame()) / 1000;
-        const delta = now - then;
+        let now, delta;
+        while (true) {
+            now = (await frame()) / 1000;
+            delta = now - then;
+            if (delta + 0.001 > 0.1) {
+                break;
+            }
+        }
         then = now;
         const fps = 1.0 / delta;
         const fps_str = fps.toFixed(2);
@@ -28,7 +34,7 @@ export async function mainloop(callback) {
             const fps_str = fps.toFixed(2);
             fps_avg_element.innerText = fps_str;
         }
-        callback();
+        await callback();
     }
 }
 export function nonnull(v) {

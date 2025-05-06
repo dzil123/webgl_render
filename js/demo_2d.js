@@ -1,7 +1,6 @@
 import * as util from "./util.js";
 import * as canvas from "./canvas.js";
 const canvasReal = canvas.getCanvasById("canvas");
-canvas.resize(canvasReal);
 export const ctx = util.nonnull(canvas.createOffscreenSameSize(canvasReal).getContext("2d", { alpha: false }));
 ctx.filter = "url(#alphaThresholdFilter)";
 ctx.fillStyle = "white";

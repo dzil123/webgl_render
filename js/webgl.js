@@ -6,16 +6,23 @@ export var VertexAttributeLayout;
     VertexAttributeLayout[VertexAttributeLayout["Position"] = 0] = "Position";
     VertexAttributeLayout[VertexAttributeLayout["Normal"] = 1] = "Normal";
 })(VertexAttributeLayout || (VertexAttributeLayout = {}));
-export function loadGL(elementId) {
-    const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+export function debugExt(gl, callback) {
+    /* a esliant-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    // @ts-ignore
     const ext = gl.getExtension("GMAN_debug_helper");
     if (ext) {
-        ext.setConfiguration({
-            failUnsetSamplerUniforms: true,
-        });
+        return callback(ext);
     }
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    /* a esalint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    return undefined;
+}
+export function loadGL(elementId) {
+    const gl_ = canvas.getCanvasById(elementId).getContext("webgl2");
+    const gl = util.nonnull(gl_);
+    resize(gl);
+    debugExt(gl, (ext) => ext.setConfiguration({
+        failUnsetSamplerUniforms: true,
+    }));
     return gl;
 }
 function typeOfShader(gl, name) {
@@ -125,5 +132,10 @@ export function resize(gl) {
     if (canvas.resize(gl.canvas)) {
         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
     }
+}
+export function premultipliedAlphaBlending(gl) {
+    gl.enable(gl.BLEND);
+    gl.blendEquation(gl.FUNC_ADD);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 }
 //# sourceMappingURL=webgl.js.map
