@@ -17,13 +17,7 @@ const texture_indexes = {
 };
 const textures = Object.fromEntries(Object.keys(texture_indexes).map((name) => {
     const tex = gl.createTexture();
-    /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-    // @ts-ignore
-    const ext = gl.getExtension("GMAN_debug_helper");
-    if (ext) {
-        ext.tagObject(tex, name);
-    }
-    /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    webgl.debugExt(gl, (ext) => ext.tagObject(tex, name));
     return [name, tex];
 }));
 const bindTexture = (tex) => {
@@ -83,6 +77,15 @@ gl.useProgram(programRender.glProgram);
 gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
 // await util.sleep(5);
 await util.frame();
+if (false) {
+    gl.clearColor(1, 1, 1, 1);
+    swapAndBindBuffers();
+    renderToBuffer();
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    swapAndBindBuffers();
+    renderToBuffer();
+    gl.clear(gl.COLOR_BUFFER_BIT);
+}
 let frame = 0;
 await util.mainloop(async () => {
     let ffwd = false;
@@ -99,7 +102,7 @@ await util.mainloop(async () => {
         renderToBuffer();
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
-    } while (((ffwd = true), frame < 100));
+    } while (((ffwd = true), frame < 0));
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     gl.useProgram(programRender.glProgram);
     bindTexture("buffer2");

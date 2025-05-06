@@ -15,7 +15,7 @@ export function resize(canvas) {
     const rect = canvas.getBoundingClientRect();
     // const width = Math.round(rect.width * dpr);
     // const height = Math.round(rect.height * dpr);
-    const x = 100;
+    const x = 500;
     const [width, height] = [x, x];
     if (canvas.width != width || canvas.height != height) {
         canvas.width = width;
