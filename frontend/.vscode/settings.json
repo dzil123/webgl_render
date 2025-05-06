@@ -3,8 +3,8 @@
   "files.insertFinalNewline": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[glsl]": {
-    "editor.defaultFormatter": "raczzalan.webgl-glsl-editor",
-    // "editor.defaultFormatter": "mjohns.clang-format",
+    // "editor.defaultFormatter": "raczzalan.webgl-glsl-editor",
+    "editor.defaultFormatter": "mjohns.clang-format",
     "editor.tabSize": 4,
   },
   "html.format.enable": false,

@@ -25,7 +25,7 @@ export function resize(canvas: HTMLCanvasElement): boolean {
   // const width = Math.round(rect.width * dpr);
   // const height = Math.round(rect.height * dpr);
 
-  const x = 900;
+  const x = 100;
   const [width, height] = [x, x];
 
   if (canvas.width != width || canvas.height != height) {
@@ -33,7 +33,7 @@ export function resize(canvas: HTMLCanvasElement): boolean {
     canvas.height = height;
 
     const resolution_element = util.nonnull(document.getElementById("res"));
-    resolution_element.innerText = `${dpr} ${width} ${height}`;
+    resolution_element.innerText = `${dpr.toFixed(2)} ${width} ${height}`;
     return true;
   }
   return false;

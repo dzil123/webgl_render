@@ -17,19 +17,29 @@ export interface Program<K extends string> {
   uniforms: Record<K, WebGLUniformLocation | null>;
 }
 
-export function loadGL(elementId: string): GL2 {
-  const gl = util.nonnull(canvas.getCanvasById(elementId).getContext("webgl2"));
-
-  /* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-  const ext = gl.getExtension("GMAN_debug_helper");
+export function debugExt(gl: GL2, callback: (ext: any) => any): any {
+  /* a esliant-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  // @ts-ignore
+  const ext: any = gl.getExtension("GMAN_debug_helper");
   if (ext) {
+    return callback(ext);
+  }
+  /* a esalint-enable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+  return undefined;
+}
+
+export function loadGL(elementId: string): GL2 {
+  const gl_ = canvas.getCanvasById(elementId).getContext("webgl2");
+  const gl = util.nonnull(gl_) as unknown as GL2;
+
+  resize(gl);
+  debugExt(gl, (ext) =>
     ext.setConfiguration({
       failUnsetSamplerUniforms: true,
-    });
-  }
-  /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
+    }),
+  );
 
-  return gl as unknown as GL2;
+  return gl;
 }
 
 function typeOfShader(gl: GL2, name: string): GL.ShaderType {
@@ -189,4 +199,10 @@ export function resize(gl: GL2) {
   if (canvas.resize(gl.canvas)) {
     gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
   }
+}
+
+export function premultipliedAlphaBlending(gl: GL2) {
+  gl.enable(gl.BLEND);
+  gl.blendEquation(gl.FUNC_ADD);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 }

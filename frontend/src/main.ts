@@ -4,6 +4,8 @@ import * as webgl from "./webgl.js";
 import { ctx } from "./demo_2d.js";
 
 const gl = webgl.loadGL("canvas");
+gl.clearColor(0, 0, 0, 1);
+gl.clear(gl.COLOR_BUFFER_BIT);
 
 const programSim = await webgl.loadProgram(
   gl,
@@ -19,7 +21,6 @@ const programRender = await webgl.loadProgram(
 
 const _aspect = gl.canvas.width / gl.canvas.height;
 
-gl.clearColor(0.5, 0.5, 0.5, 1.0);
 gl.useProgram(programSim.glProgram);
 
 const texture_indexes = {
@@ -143,6 +144,7 @@ const swapAndBindBuffers = () => {
   bindTexture("buffer1");
 };
 
+// TODO: two separate FBOs instead of modifying single FBO
 const renderToBuffer = () => {
   gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, fboSim);
@@ -155,29 +157,30 @@ const renderToBuffer = () => {
   );
 };
 
-gl.enable(gl.BLEND);
-// premultiplied alpha
-gl.blendEquationSeparate(gl.FUNC_ADD, gl.FUNC_ADD);
-gl.blendFuncSeparate(
-  gl.ONE,
-  gl.ONE_MINUS_SRC_ALPHA,
-  gl.ONE,
-  gl.ONE_MINUS_SRC_ALPHA,
-);
+gl.useProgram(programRender.glProgram);
+gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+// await util.sleep(5);
+await util.frame();
 
 let frame = 0;
-await util.mainloop(() => {
-  frame += 1;
-  console.log("frame");
-  webgl.resize(gl);
+await util.mainloop(async () => {
+  let ffwd = false;
+  do {
+    if (ffwd) {
+      // await util.sleep(0);
+    }
 
-  gl.useProgram(programSim.glProgram);
-  swapAndBindBuffers();
-  // bindTexture("buffer1");
-  gl.uniform1ui(programSim.uniforms.frame, frame);
-  renderToBuffer();
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+    frame += 1;
+    document.getElementById("frame")!.textContent = "" + frame;
+
+    gl.useProgram(programSim.glProgram);
+    swapAndBindBuffers();
+    // bindTexture("buffer1");
+    gl.uniform1ui(programSim.uniforms.frame, frame);
+    renderToBuffer();
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 3);
+  } while (((ffwd = true), frame < 100));
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.useProgram(programRender.glProgram);
