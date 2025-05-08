@@ -18,7 +18,7 @@ export async function mainloop(callback) {
         while (true) {
             now = (await frame()) / 1000;
             delta = now - then;
-            if (delta + 0.001 > 0.015) {
+            if (delta + 0.001 > 0.01) {
                 break;
             }
         }

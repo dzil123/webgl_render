@@ -8,7 +8,7 @@ ctx.fillStyle = "white";
 ctx.font = `200 ${ctx.canvas.width * 0.2}px serif`;
 ctx.textAlign = "center";
 ctx.textBaseline = "middle";
-ctx.fillText(text ?? "meowdy", toHalf(ctx.canvas.width / 2), toHalf(ctx.canvas.height * 0.8), ctx.canvas.width);
+ctx.fillText(text ?? "horse plinko", toHalf(ctx.canvas.width / 2), toHalf(ctx.canvas.height * 0.8), ctx.canvas.width);
 // �￼
 void (async () => {
     return;
